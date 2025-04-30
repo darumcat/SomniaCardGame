@@ -1,0 +1,5 @@
+"homepage": "https://ваш-username.github.io/durak-game",
+"scripts": {
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d dist"
+}
