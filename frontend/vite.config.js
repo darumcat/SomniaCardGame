@@ -3,18 +3,19 @@ import react from '@vitejs/plugin-react'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
+  root: './',
+  publicDir: 'public',
   plugins: [
     react(),
-    nodePolyfills({
-      include: ['stream', 'crypto', 'util', 'assert', 'http', 'https', 'os', 'path']
-    })
+    nodePolyfills()
   ],
-  define: {
-    global: 'window'
-  },
   build: {
-    commonjsOptions: {
-      transformMixedEsModules: true
+    outDir: 'dist',
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: './public/index.html'
+      }
     }
   }
 })
