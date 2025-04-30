@@ -1,4 +1,4 @@
-"homepage": "https://ваш-username.github.io/durak-game",
+"homepage": "https://darumcat.github.io/SomniaCardGame",
 "scripts": {
   "predeploy": "npm run build",
   "deploy": "gh-pages -d dist"
