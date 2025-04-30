@@ -1,18 +1,15 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 3000,
-    open: true
-  },
+  publicDir: 'public', // Явно указываем папку с static-файлами
   build: {
     outDir: 'dist',
-    assetsDir: 'assets',
-    emptyOutDir: true
+    rollupOptions: {
+      input: {
+        main: './public/index.html' // Явный путь к входному файлу
+      }
+    }
   },
-  define: {
-    'process.env': {}
-  }
-});
+  plugins: [react()]
+})
