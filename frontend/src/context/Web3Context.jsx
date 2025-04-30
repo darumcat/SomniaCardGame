@@ -16,7 +16,7 @@ export const Web3Provider = ({ children }) => {
   }
 
   const initContracts = () => {
-    const provider = new ethers.providers.Web3Provider(window.ethereum)
+    const provider = new ethers.BrowserProvider(window.ethereum)
     const signer = provider.getSigner()
     
     const nftContract = new ethers.Contract(
@@ -55,4 +55,5 @@ export const Web3Provider = ({ children }) => {
   )
 }
 
+export const useWeb3 = () => useContext(Web3Context)
 export const useWeb3 = () => useContext(Web3Context)
