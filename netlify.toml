@@ -1,7 +1,7 @@
 [build]
-  base = "frontend"  # Добавьте эту строку!
+  base = "frontend"  # Указываем базовую папку
   command = "npm install && npm run build"
-  publish = "dist"   # Упростите путь (без дублирования frontend)
+  publish = "dist"   # Путь относительно base (frontend/dist)
   environment = { NODE_VERSION = "18" }
 
 [[redirects]]
