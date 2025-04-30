@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import GameTable from './GameTable';
+import ethers from '../ethers-resolver'; // Измененный импорт
 
 const PVPLobby = () => {
   const { contracts } = useWeb3();
@@ -12,7 +13,6 @@ const PVPLobby = () => {
       const tx = await contracts.gameContract.startGame(opponent, 0); // 0 = PVP
       await tx.wait();
       
-      // Слушаем событие начала игры
       contracts.gameContract.on('GameStarted', (id, player1, player2) => {
         if (player1 === contracts.account || player2 === contracts.account) {
           setGameId(id.toNumber());
@@ -39,4 +39,5 @@ const PVPLobby = () => {
   );
 };
 
+export default PVPLobby;
 export default PVPLobby;
