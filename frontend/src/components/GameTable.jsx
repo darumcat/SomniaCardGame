@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '../context/Web3Context';
+import ethers from '../ethers-resolver'; // Новый импорт
 import { cleanMessage } from '../utils/filterWords';
 import { motion, AnimatePresence } from 'framer-motion';
 import './GameTable.css';
