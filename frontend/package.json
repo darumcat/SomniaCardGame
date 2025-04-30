@@ -16,7 +16,7 @@
   "fs": false,
   "path": false,
   "os": false
-}
+},
   "devDependencies": {
     "vite": "^5.0.0",
     "@vitejs/plugin-react": "^4.2.1"
