@@ -1,18 +1,24 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
+import path from 'path'
 
 export default defineConfig({
-  root: './',
-  publicDir: 'public',
+  root: path.resolve(__dirname, './'),
+  publicDir: path.resolve(__dirname, 'public'),
   plugins: [
     react(),
     nodePolyfills()
   ],
   build: {
-    outDir: 'dist',
+    outDir: path.resolve(__dirname, 'dist'),
     rollupOptions: {
-      input: './public/index.html' // Указываем относительный путь
+      input: path.resolve(__dirname, 'public/index.html')
+    }
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
     }
   }
 })
