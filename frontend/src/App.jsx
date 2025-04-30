@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ethers } from 'ethers'
+import { ethers } from 'ethers/dist/ethers.min.js'
 import NetworkChecker from './components/NetworkChecker'
 import MintSection from './components/MintSection'
 import GameLobby from './components/GameLobby'
