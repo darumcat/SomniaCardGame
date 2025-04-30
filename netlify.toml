@@ -1,7 +1,7 @@
 [build]
   base = "frontend"
   command = "npm install && npm run build"
-  publish = "dist"  # Теперь путь относительно base
+  publish = "dist"
   environment = { NODE_VERSION = "18" }
 
 [[redirects]]
