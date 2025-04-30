@@ -1,6 +1,7 @@
 [build]
-  command = "cd frontend && npm install && npm run build"
-  publish = "frontend/dist"
+  base = "frontend"  # Добавьте эту строку!
+  command = "npm install && npm run build"
+  publish = "dist"   # Упростите путь (без дублирования frontend)
   environment = { NODE_VERSION = "18" }
 
 [[redirects]]
