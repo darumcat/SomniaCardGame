@@ -1,7 +1,7 @@
 {
   "name": "durak-game",
   "version": "1.0.0",
-  "homepage": "https://darumcat.github.io/SomniaCardGame",  // без кириллицы!
+  "homepage": "https://darumcat.github.io/SomniaCardGame",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
