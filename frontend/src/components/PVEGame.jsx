@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import GameTable from './GameTable';
+import ethers from '../ethers-resolver'; // Измененный импорт
 
 const PVEGame = () => {
   const { contracts } = useWeb3();
@@ -9,7 +10,7 @@ const PVEGame = () => {
   const startGame = async () => {
     try {
       const tx = await contracts.gameContract.startGame(
-        '0x0000000000000000000000000000000000000000', // Адрес для PVE
+        ethers.ZeroAddress, // Адрес для PVE
         1 // 1 = PVE
       );
       await tx.wait();
