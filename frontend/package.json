@@ -5,15 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "prebuild": "rm -rf dist"  // Добавьте эту строку
   },
   "dependencies": {
     "ethers": "^6.7.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "path": "^0.12.7"         // Добавьте если используете path
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "@types/node": "^20.0.0"  // Добавьте для работы с path
   }
 }
