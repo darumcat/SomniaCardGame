@@ -1,15 +1,19 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'path'
 
 export default defineConfig({
-  root: path.resolve(__dirname, './'),  // Явно указываем корень
-  publicDir: 'public',  // Указываем папку с static файлами
   plugins: [react()],
+  optimizeDeps: {
+    include: ['ethers'],
+    esbuildOptions: {
+      target: 'es2020'
+    }
+  },
   build: {
-    outDir: 'dist',
-    rollupOptions: {
-      input: path.resolve(__dirname, 'public/index.html')  // Абсолютный путь
+    target: 'es2020',
+    commonjsOptions: {
+      transformMixedEsModules: true,
+      include: [/node_modules/]
     }
   }
 })
