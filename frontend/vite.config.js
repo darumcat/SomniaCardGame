@@ -3,29 +3,13 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig({
+  root: path.resolve(__dirname, './'),  // Явно указываем корень
+  publicDir: 'public',  // Указываем папку с static файлами
   plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
   build: {
-    outDir: 'dist',  // Четко указываем выходную директорию
-    emptyOutDir: true,
-    target: 'es2020',
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
+    outDir: 'dist',
     rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'index.html')  // Явное указание на входной файл
-      }
-    }
-  },
-  optimizeDeps: {
-    include: ['ethers'],
-    esbuildOptions: {
-      target: 'es2020'
+      input: path.resolve(__dirname, 'public/index.html')  // Абсолютный путь
     }
   }
 })
