@@ -1,7 +1,7 @@
 [build]
-  base = "frontend"       # Netlify будет работать из этой папки
-  publish = "dist"        # Указываем относительно base directory
-  command = "npm install && npm run build"  # Теперь команда выполняется внутри frontend/
+  base = "frontend"
+  publish = "dist"  # Теперь это относительно base directory
+  command = "npm install && npm run build"
 
 [[redirects]]
   from = "/*"
