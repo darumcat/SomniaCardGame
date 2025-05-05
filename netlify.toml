@@ -1,19 +1,9 @@
 [build]
   command = """
-    if [ -d "frontend" ]; then
-      cd frontend &&
-      echo "Очищаем кэш..." &&
-      rm -rf node_modules package-lock.json .npmrc &&
-      echo "Устанавливаем зависимости..." &&
-      npm install --legacy-peer-deps --prefer-offline &&
-      echo "Запускаем сборку..." &&
-      npm run build || exit 1;
-    else
-      echo "Ошибка: папка frontend не найдена!";
-      exit 1;
-    fi
+    cd frontend && 
+    npm install --legacy-peer-deps --prefer-offline && 
+    npm run build
   """
-  
   publish = "frontend/dist"
 
 [build.environment]
@@ -21,9 +11,6 @@
   NPM_FLAGS = "--legacy-peer-deps --prefer-offline"
   NEXT_TELEMETRY_DISABLED = "1"
   CI = "true"
-
-[build.processing]
-  skip_processing = true
 
 [[headers]]
   for = "/*"
@@ -51,10 +38,5 @@
 
 [[headers]]
   for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.js"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
