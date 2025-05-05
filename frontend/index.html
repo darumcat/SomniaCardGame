@@ -3,31 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Минимальная CSP для работы с Web3 -->
   <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https: 'unsafe-inline';
-    connect-src 'self' https: wss:;
-    style-src 'self' 'unsafe-inline';
+    default-src 'self' https:;
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https: blob:;
+    style-src 'self' 'unsafe-inline' https:;
     img-src 'self' data: https:;
     font-src 'self' data: https:;
+    connect-src 'self' https: wss:;
     frame-src 'self' https:;
     worker-src 'self' blob:;
+    base-uri 'self';
   ">
   <title>Somnia Card Game</title>
-  <script>
-    // Патч для безопасного eval
-    window.__originalEval = window.eval;
-    window.eval = function(str) {
-      if (str && typeof str === 'string') {
-        if (str.includes('web3') || str.includes('ethereum') || str.includes('phantom')) {
-          return;
-        }
-      }
-      return window.__originalEval(str);
-    };
-  </script>
 </head>
 <body>
   <div id="root"></div>
+  
+  <!-- Патч для MetaMask/Phantom -->
+  <script>
+    // Сохраняем оригинальный eval
+    const originalEval = window.eval;
+    
+    // Переопределяем eval
+    window.eval = function(str) {
+      if (typeof str === 'string' && 
+          (str.includes('web3') || str.includes('ethereum') || str.includes('phantom'))) {
+        console.warn('Blocked eval from extension');
+        return;
+      }
+      return originalEval(str);
+    };
+  </script>
 </body>
 </html>
