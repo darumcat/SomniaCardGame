@@ -1,6 +1,18 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { ethers } from 'ethers'
-import { CONTRACT_ADDRESSES, getContractABI } from '@utils/contracts.js'
+
+// Диагностика пути (раскомментируйте для проверки)
+try {
+  console.log('Путь к contracts.js:', require.resolve('../utils/contracts.js'))
+} catch (e) {
+  console.error('Ошибка разрешения пути contracts.js:', e)
+}
+
+// Вариант 1: Относительный путь (используйте этот для теста)
+import { CONTRACT_ADDRESSES, getContractABI } from '../utils/contracts.js'
+
+// Вариант 2: Алиас @utils (раскомментируйте после настройки vite.config.js)
+// import { CONTRACT_ADDRESSES, getContractABI } from '@utils/contracts.js'
 
 const Web3Context = createContext()
 
@@ -22,6 +34,8 @@ export const Web3Provider = ({ children }) => {
   const initContracts = async (account) => {
     const provider = new ethers.BrowserProvider(window.ethereum)
     const signer = await provider.getSigner(account)
+    
+    console.log('CONTRACT_ADDRESSES:', CONTRACT_ADDRESSES) // Проверка загрузки
     
     setContracts({
       nftContract: new ethers.Contract(
@@ -49,4 +63,5 @@ export const Web3Provider = ({ children }) => {
   )
 }
 
+export const useWeb3 = () => useContext(Web3Context)
 export const useWeb3 = () => useContext(Web3Context)
