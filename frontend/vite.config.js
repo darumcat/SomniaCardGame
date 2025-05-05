@@ -10,7 +10,7 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils'),
       'ethers': path.resolve(__dirname, './node_modules/ethers')
     },
-    extensions: ['.js', '.jsx']
+    extensions: ['.js', '.jsx', '.json']
   },
   optimizeDeps: {
     include: [
