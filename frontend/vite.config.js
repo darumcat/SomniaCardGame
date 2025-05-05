@@ -4,7 +4,7 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/',  // Добавлено - это ключевое изменение для корректного деплоя
+  base: '/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -27,8 +27,17 @@ export default defineConfig({
   build: {
     target: 'es2020',
     outDir: 'dist',
+    emptyOutDir: true,
+    sourcemap: false, // Можно включить для дебага
     rollupOptions: {
-      external: ['react-toastify']
+      external: ['react-toastify'],
+      output: {
+        assetFileNames: 'assets/[name].[hash][extname]',
+        entryFileNames: 'assets/[name].[hash].js'
+      }
     }
+  },
+  server: {
+    open: true
   }
 })
