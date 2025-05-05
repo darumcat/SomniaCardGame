@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { toast } from 'react-toastify'
 import { useWeb3 } from '../context/Web3Context'
+import 'react-toastify/dist/ReactToastify.css'
 
 const NetworkChecker = () => {
   const { account } = useWeb3()
