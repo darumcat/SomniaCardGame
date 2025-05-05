@@ -11,10 +11,10 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils'),
       'ethers': path.resolve(__dirname, './node_modules/ethers')
     },
-    extensions: ['.js', '.jsx', '.json'] // Сохраняем расширения
+    extensions: ['.js', '.jsx', '.json']
   },
   optimizeDeps: {
-    include: [ // Сохраняем важные зависимости
+    include: [
       'react',
       'react-dom',
       'ethers',
@@ -22,26 +22,29 @@ export default defineConfig({
       'framer-motion',
       'bad-words'
     ],
-    exclude: ['js-big-decimal'] // Сохраняем исключения
+    exclude: ['js-big-decimal']
   },
   build: {
-    target: 'es2020', // Сохраняем target
+    target: 'es2020',
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: false, // Оставляем выключенным
+    sourcemap: false,
     rollupOptions: {
       input: path.resolve(__dirname, 'index.html'),
-      external: ['react-toastify'], // Сохраняем external
+      external: ['react-toastify'],
       output: {
         format: 'es',
-        generatedCode: 'es2015', // Ключевое исправление
+        generatedCode: 'es2015',
         assetFileNames: 'assets/[name].[hash][extname]',
         entryFileNames: 'assets/[name].[hash].js',
-        chunkFileNames: 'assets/[name].[hash].js' // Сохраняем именование
+        chunkFileNames: 'assets/[name].[hash].js'
       }
     }
   },
   server: {
-    open: true // Оставляем автооткрытие
+    open: true,
+    headers: {
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'"
+    }
   }
 })
