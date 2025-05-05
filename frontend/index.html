@@ -3,20 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https: 'unsafe-inline';
+    connect-src 'self' https: wss:;
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data: https:;
+    font-src 'self' data: https:;
+    frame-src 'self' https:;
+    worker-src 'self' blob:;
+  ">
   <title>Somnia Card Game</title>
+  <script>
+    // Патч для безопасного eval
+    window.__originalEval = window.eval;
+    window.eval = function(str) {
+      if (str && typeof str === 'string') {
+        if (str.includes('web3') || str.includes('ethereum') || str.includes('phantom')) {
+          return;
+        }
+      }
+      return window.__originalEval(str);
+    };
+  </script>
 </head>
 <body>
   <div id="root"></div>
-  <script>
-    // Патч для CSP (оставьте этот код)
-    if (typeof Proxy !== 'undefined') {
-      window.eval = new Proxy(window.eval, {
-        apply(target, thisArg, args) {
-          return target.apply(thisArg, args);
-        }
-      });
-    }
-  </script>
 </body>
 </html>
