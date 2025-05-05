@@ -16,8 +16,8 @@
   for = "/*"
   [headers.values]
     Content-Security-Policy = """
-      default-src 'self';
-      script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https:;
+      default-src 'self' https:;
+      script-src 'self' 'unsafe-eval' 'unsafe-inline' https: blob:;
       style-src 'self' 'unsafe-inline' https:;
       img-src 'self' data: https:;
       font-src 'self' https: data:;
