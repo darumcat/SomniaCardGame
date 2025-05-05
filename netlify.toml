@@ -5,15 +5,14 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
-  CI = "true"
 
-# Редиректы для SPA
+# Редиректы для SPA (чтобы роутинг работал)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Безопасные заголовки с поддержкой Vite/React
+# CSP для Vite + React (разрешены необходимые директивы)
 [[headers]]
   for = "/*"
   [headers.values]
@@ -25,6 +24,7 @@
       img-src 'self' data: https:;
       font-src 'self' data:;
       worker-src 'self' blob:;
+      frame-src 'self';
     """
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
