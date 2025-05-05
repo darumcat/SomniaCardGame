@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { ethers } from 'ethers'
-import { CONTRACT_ADDRESSES, getContractABI } from '../utils/contracts'
+import { CONTRACT_ADDRESSES, getContractABI } from "@/utils/contracts"
 
 const Web3Context = createContext()
 
