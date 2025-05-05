@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from 'react'
-import { ethers } from 'ethers'
+import { ethers } from 'ethers@6.7.1';
 import { CONTRACT_ADDRESSES, getContractABI } from '../../utils/contracts.js'
 
 const Web3Context = createContext()
