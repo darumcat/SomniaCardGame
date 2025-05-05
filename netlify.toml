@@ -1,17 +1,58 @@
 [build]
-  command = "cd frontend && npm ci --legacy-peer-deps && npm run build"
+  # Команды для сборки
+  command = """
+    cd frontend && 
+    npm install --legacy-peer-deps && 
+    npm run build
+  """
+  
+  # Папка с результатом сборки
   publish = "frontend/dist"
-  environment = { 
-    NODE_VERSION = "18",
-    NPM_FLAGS = "--legacy-peer-deps"
-  }
 
+  # Настройки окружения
+  [build.environment]
+    # Версия Node.js
+    NODE_VERSION = "18"
+    
+    # Флаги для npm
+    NPM_FLAGS = "--legacy-peer-deps"
+    
+    # Отключаем телеметрию (ускоряет установку)
+    NEXT_TELEMETRY_DISABLED = "1"
+
+# Настройки обработки ошибок
+[build.processing]
+  # Ускоряет сборку при ошибках
+  skip_processing = true
+
+# Заголовки безопасности
 [[headers]]
   for = "/*"
   [headers.values]
-    Access-Control-Allow-Origin = "*"
+    # Базовые security-заголовки
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    
+    # Для работы Web3
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self' 'unsafe-eval' https:;
+      connect-src 'self' https: wss:;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self';
+    """
 
+# Перенаправления для SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Настройки кэширования
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
