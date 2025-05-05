@@ -15,5 +15,15 @@
 </head>
 <body>
   <div id="root"></div>
+  <script>
+  // Патч для CSP
+  if (typeof Proxy !== 'undefined') {
+    window.eval = new Proxy(window.eval, {
+      apply(target, thisArg, args) {
+        return target.apply(thisArg, args);
+      }
+    });
+  }
+</script>
 </body>
 </html>
