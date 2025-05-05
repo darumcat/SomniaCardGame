@@ -21,30 +21,27 @@ export default defineConfig({
       'react-toastify',
       'framer-motion',
       'bad-words'
-    ],
-    exclude: ['js-big-decimal']
+    ]
   },
   build: {
     target: 'es2020',
-    minify: 'terser',
+    minify: 'esbuild', // Заменяем terser на esbuild
     sourcemap: false,
-    terserOptions: {
-      compress: {
-        defaults: false,
-        drop_console: true
+    outDir: 'dist',
+    emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        assetFileNames: 'assets/[name].[hash][extname]',
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js'
       }
     }
   },
- server: {
+  server: {
     open: true,
     hmr: {
       protocol: 'wss',
       clientPort: 443
-    }
-  },
-  preview: {
-    headers: {
-      "Content-Security-Policy": "default-src 'self' https:; script-src 'self' 'unsafe-eval' 'unsafe-inline' https: blob:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' https: data:; connect-src 'self' https: wss:; frame-src 'self' https:; worker-src 'self' blob:;"
     }
   }
 })
