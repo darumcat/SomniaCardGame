@@ -12,6 +12,14 @@ function App() {
   const [hasUSDCard, setHasUSDCard] = useState(false)
   const [loading, setLoading] = useState(true)
 
+  {!hasNFT && (
+  <MintSection 
+    onMintSuccess={(type) => {
+      if (type === 'nft') setHasNFT(true)
+      if (type === 'usdcard') setHasUSDCard(true)
+    }} 
+  />
+)}
   // Проверяем балансы при изменении аккаунта
   useEffect(() => {
     const checkBalances = async () => {
