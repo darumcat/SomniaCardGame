@@ -30,6 +30,7 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
     rollupOptions: {
+      input: path.resolve(__dirname, 'index.html'), // Важное добавление
       external: ['react-toastify'],
       output: {
         format: 'es',
