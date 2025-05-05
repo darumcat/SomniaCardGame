@@ -17,14 +17,12 @@
   [headers.values]
     Content-Security-Policy = """
       default-src 'self';
-      script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https: blob:;
-      style-src 'self' 'unsafe-inline' https:;
+      script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob:;
+      style-src 'self' 'unsafe-inline';
       img-src 'self' data: https:;
-      font-src 'self' https: data:;
+      font-src 'self';
       connect-src 'self' https: wss:;
-      frame-src 'self' https:;
-      worker-src 'self' blob:;
-      base-uri 'self';
+      frame-src 'self';
     """
 
 [[redirects]]
