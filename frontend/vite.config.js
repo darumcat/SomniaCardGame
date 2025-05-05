@@ -11,10 +11,10 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils'),
       'ethers': path.resolve(__dirname, './node_modules/ethers')
     },
-    extensions: ['.js', '.jsx', '.json']
+    extensions: ['.js', '.jsx', '.json'] // Сохраняем расширения
   },
   optimizeDeps: {
-    include: [
+    include: [ // Сохраняем важные зависимости
       'react',
       'react-dom',
       'ethers',
@@ -22,26 +22,26 @@ export default defineConfig({
       'framer-motion',
       'bad-words'
     ],
-    exclude: ['js-big-decimal']
+    exclude: ['js-big-decimal'] // Сохраняем исключения
   },
   build: {
-    target: 'es2020',
+    target: 'es2020', // Сохраняем target
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: false,
+    sourcemap: false, // Оставляем выключенным
     rollupOptions: {
       input: path.resolve(__dirname, 'index.html'),
-      external: ['react-toastify'],
+      external: ['react-toastify'], // Сохраняем external
       output: {
         format: 'es',
-        generatedCode: 'es2015',  // Добавленная строка
+        generatedCode: 'es2015', // Ключевое исправление
         assetFileNames: 'assets/[name].[hash][extname]',
         entryFileNames: 'assets/[name].[hash].js',
-        chunkFileNames: 'assets/[name].[hash].js'
+        chunkFileNames: 'assets/[name].[hash].js' // Сохраняем именование
       }
     }
   },
   server: {
-    open: true
+    open: true // Оставляем автооткрытие
   }
 })
