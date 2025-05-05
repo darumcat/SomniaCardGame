@@ -34,9 +34,10 @@ export default defineConfig({
       external: ['react-toastify'],
       output: {
         format: 'es',
-        assetFileNames: 'assets/[name].[hash][extname]',  // Изменил дефис на точку
-        entryFileNames: 'assets/[name].[hash].js',       // Изменил дефис на точку
-        chunkFileNames: 'assets/[name].[hash].js'        // Добавил новую строку
+        generatedCode: 'es2015',  // Добавленная строка
+        assetFileNames: 'assets/[name].[hash][extname]',
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js'
       }
     }
   },
