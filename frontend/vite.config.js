@@ -28,12 +28,14 @@ export default defineConfig({
     target: 'es2020',
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: false, // Можно включить для дебага
+    sourcemap: false,
     rollupOptions: {
       external: ['react-toastify'],
       output: {
-        assetFileNames: 'assets/[name].[hash][extname]',
-        entryFileNames: 'assets/[name].[hash].js'
+        format: 'es',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]'
       }
     }
   },
