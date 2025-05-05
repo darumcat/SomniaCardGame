@@ -1,91 +1,55 @@
-// Проверяем доступность MetaMask
-export const isMetaMaskInstalled = () => {
-  return typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask;
+// Проверка подключения MetaMask
+export const isMetaMaskConnected = async () => {
+  if (typeof window.ethereum === 'undefined') return false;
+  const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+  return accounts.length > 0;
 };
 
-// Инициализация провайдера
-export const getProvider = () => {
-  if (!isMetaMaskInstalled()) {
-    throw new Error('Please install MetaMask extension');
+// Инициализация провайдера Ethers.js
+export const initEthersProvider = () => {
+  if (typeof window.ethereum === 'undefined') {
+    throw new Error('MetaMask not installed');
   }
-  return window.ethereum;
+  return new ethers.BrowserProvider(window.ethereum);
 };
 
 // Подключение кошелька
 export const connectWallet = async () => {
   try {
-    const provider = getProvider();
-    const accounts = await provider.request({ 
+    const accounts = await window.ethereum.request({ 
       method: 'eth_requestAccounts' 
     });
+    const provider = initEthersProvider();
+    const signer = await provider.getSigner();
+    const network = await provider.getNetwork();
     
     return {
       address: accounts[0],
-      chainId: provider.chainId
+      signer,
+      provider,
+      chainId: network.chainId
     };
   } catch (error) {
-    console.error('MetaMask connection error:', error);
-    throw error;
+    throw new Error(`Connection failed: ${error.message}`);
   }
 };
 
-// Слушатель изменений аккаунта
-export const setupAccountChangeListener = (callback) => {
-  const provider = getProvider();
-  provider.on('accountsChanged', (accounts) => {
-    callback(accounts[0] || null);
+// Слушатели изменений
+export const setupListeners = (handlers) => {
+  if (typeof window.ethereum === 'undefined') return;
+
+  window.ethereum.on('accountsChanged', handlers.handleAccountsChanged);
+  window.ethereum.on('chainChanged', handlers.handleChainChanged);
+};
+
+// Отправка ETH
+export const sendEth = async (from, to, amount) => {
+  const provider = initEthersProvider();
+  const signer = await provider.getSigner();
+  const tx = await signer.sendTransaction({
+    from,
+    to,
+    value: ethers.parseEther(amount)
   });
-};
-
-// Слушатель изменений сети
-export const setupNetworkChangeListener = (callback) => {
-  const provider = getProvider();
-  provider.on('chainChanged', (chainId) => {
-    callback(chainId);
-  });
-};
-
-// Отправка транзакции
-export const sendTransaction = async (transactionConfig) => {
-  const provider = getProvider();
-  try {
-    const txHash = await provider.request({
-      method: 'eth_sendTransaction',
-      params: [transactionConfig]
-    });
-    return txHash;
-  } catch (error) {
-    console.error('Transaction error:', error);
-    throw error;
-  }
-};
-
-// Подписание сообщения
-export const signMessage = async (message, address) => {
-  const provider = getProvider();
-  try {
-    const signature = await provider.request({
-      method: 'personal_sign',
-      params: [message, address]
-    });
-    return signature;
-  } catch (error) {
-    console.error('Signing error:', error);
-    throw error;
-  }
-};
-
-// Получение баланса
-export const getBalance = async (address) => {
-  const provider = getProvider();
-  try {
-    const balance = await provider.request({
-      method: 'eth_getBalance',
-      params: [address, 'latest']
-    });
-    return balance;
-  } catch (error) {
-    console.error('Balance check error:', error);
-    throw error;
-  }
+  return tx.wait();
 };
