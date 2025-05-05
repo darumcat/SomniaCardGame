@@ -12,7 +12,7 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils'),
       '@components': path.resolve(__dirname, './src/components'),
       // Фикс для MetaMask
-      '@metamask/providers': path.resolve(__dirname, './node_modules/@metamask/providers/dist/metamask-provider.min.js'),
+      '@metamask/providers': path.resolve(__dirname, './node_modules/@metamask/providers/dist/metamask-provider.min.js')
       // Фикс для ethers
       'ethers': path.resolve(__dirname, './node_modules/ethers/dist/ethers.min.js')
     },
