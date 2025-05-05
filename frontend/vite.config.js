@@ -7,13 +7,12 @@ export default defineConfig({
   base: '/',
   css: {
     modules: false,
-    devSourcemap: false,
+    devSourcemap: false
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@utils': path.resolve(__dirname, './src/utils'),
-      'ethers': path.resolve(__dirname, './node_modules/ethers')
+      '@utils': path.resolve(__dirname, './src/utils')
     },
     extensions: ['.js', '.jsx', '.json']
   },
@@ -27,8 +26,8 @@ export default defineConfig({
     ]
   },
   build: {
-    target: 'es2020',
-    minify: 'esbuild',
+    target: 'esnext',
+    minify: 'terser',
     sourcemap: false,
     outDir: 'dist',
     emptyOutDir: true,
