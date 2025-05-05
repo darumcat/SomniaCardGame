@@ -40,4 +40,3 @@ const PVPLobby = () => {
 };
 
 export default PVPLobby;
-export default PVPLobby;
