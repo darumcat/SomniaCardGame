@@ -4,19 +4,11 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      'ethers': path.resolve(__dirname, 'node_modules/ethers')
-    }
-  },
-  optimizeDeps: {
-    include: ['ethers']
-  },
+  root: './', // Явно указываем корень проекта
   build: {
-    target: 'es2020',
-    commonjsOptions: {
-      transformMixedEsModules: true
+    outDir: 'dist',
+    rollupOptions: {
+      input: path.resolve(__dirname, 'index.html') // Явный путь к index.html
     }
   }
 })
