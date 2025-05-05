@@ -9,39 +9,56 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@utils': path.resolve(__dirname, './src/utils')
+      '@utils': path.resolve(__dirname, './src/utils'),
+      '@components': path.resolve(__dirname, './src/components'),
+      // Фикс для MetaMask
+      '@metamask/providers': path.resolve(__dirname, './node_modules/@metamask/providers/dist/metamask-provider.min.js'),
+      // Фикс для ethers
+      'ethers': path.resolve(__dirname, './node_modules/ethers/dist/ethers.min.js')
     },
-    extensions: ['.js', '.jsx', '.ts', '.tsx']
+    extensions: ['.js', '.jsx', '.ts', '.tsx', '.json']
   },
 
-  // Оптимизация зависимостей для Web3
   optimizeDeps: {
     include: [
       'react',
       'react-dom',
-      'ethers',
-      '@metamask/providers',
+      'react-toastify',
       'framer-motion',
-      'react-toastify'
+      'bad-words'
     ],
-    exclude: ['@ethersproject/hash']
+    exclude: [
+      '@ethersproject/hash',
+      '@metamask/providers'
+    ]
   },
 
-  // Настройки сборки
   build: {
     target: 'es2020',
     minify: 'terser',
     sourcemap: false,
-    chunkSizeWarningLimit: 2000, // Увеличенный лимит для больших Web3-бандлов
+    chunkSizeWarningLimit: 2500, // Увеличенный лимит для Web3-библиотек
+    emptyOutDir: true,
     
     rollupOptions: {
+      external: [
+        '@metamask/providers',
+        'web3' // Если используете
+      ],
       output: {
-        manualChunks: {
-          // Выносим тяжелые зависимости в отдельные чанки
-          ethers: ['ethers'],
-          metamask: ['@metamask/providers'],
-          react: ['react', 'react-dom'],
-          vendor: ['framer-motion', 'react-toastify']
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('ethers')) {
+              return 'ethers';
+            }
+            if (id.includes('framer-motion')) {
+              return 'framer-motion';
+            }
+            if (id.includes('react')) {
+              return 'react-vendor';
+            }
+            return 'vendor';
+          }
         },
         assetFileNames: 'assets/[name].[hash][extname]',
         entryFileNames: 'assets/[name].[hash].js',
@@ -50,7 +67,6 @@ export default defineConfig({
     }
   },
 
-  // Настройки сервера для разработки
   server: {
     port: 3000,
     open: true,
@@ -59,15 +75,14 @@ export default defineConfig({
       clientPort: 443
     },
     proxy: {
-      // Пример прокси для API (если нужно)
       '/api': {
         target: 'http://localhost:5000',
-        changeOrigin: true
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/api/, '')
       }
     }
   },
 
-  // Глобальные CSS-настройки
   css: {
     modules: {
       localsConvention: 'camelCase'
