@@ -5,6 +5,7 @@ import MintSection from './components/MintSection'
 import GameLobby from './components/GameLobby'
 import Leaderboard from './components/Leaderboard'
 import './styles.css'
+import './animations.css';
 
 function App() {
   const { account, contracts, connectWallet } = useWeb3()
