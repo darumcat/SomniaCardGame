@@ -11,12 +11,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@utils': path.resolve(__dirname, './src/utils'),
       '@components': path.resolve(__dirname, './src/components'),
-      // Фикс для MetaMask
-      '@metamask/providers': path.resolve(__dirname, './node_modules/@metamask/providers/dist/metamask-provider.min.js')
-      // Фикс для ethers
+      // Алиасы для Web3-библиотек
+      '@metamask/providers': path.resolve(__dirname, './node_modules/@metamask/providers/dist/metamask-provider.min.js'),
       'ethers': path.resolve(__dirname, './node_modules/ethers/dist/ethers.min.js')
     },
-    extensions: ['.js', '.jsx', '.ts', '.tsx', '.json']
+    extensions: ['.js', '.jsx', '.json']
   },
 
   optimizeDeps: {
@@ -24,12 +23,11 @@ export default defineConfig({
       'react',
       'react-dom',
       'react-toastify',
-      'framer-motion',
-      'bad-words'
+      'framer-motion'
     ],
     exclude: [
-      '@ethersproject/hash',
-      '@metamask/providers'
+      '@metamask/providers',
+      '@ethersproject/hash'
     ]
   },
 
@@ -37,60 +35,30 @@ export default defineConfig({
     target: 'es2020',
     minify: 'terser',
     sourcemap: false,
-    chunkSizeWarningLimit: 2500, // Увеличенный лимит для Web3-библиотек
-    emptyOutDir: true,
-    
+    chunkSizeWarningLimit: 2500,
     rollupOptions: {
       external: [
         '@metamask/providers',
-        'web3' // Если используете
+        'web3'
       ],
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('ethers')) {
-              return 'ethers';
-            }
-            if (id.includes('framer-motion')) {
-              return 'framer-motion';
-            }
-            if (id.includes('react')) {
-              return 'react-vendor';
-            }
-            return 'vendor';
-          }
-        },
-        assetFileNames: 'assets/[name].[hash][extname]',
-        entryFileNames: 'assets/[name].[hash].js',
-        chunkFileNames: 'assets/[name].[hash].js'
+        manualChunks: {
+          ethers: ['ethers'],
+          react: ['react', 'react-dom'],
+          framer: ['framer-motion'],
+          toastify: ['react-toastify']
+        }
       }
     }
   },
 
   server: {
+    host: true,
     port: 3000,
-    open: true,
+    strictPort: true,
     hmr: {
       protocol: 'wss',
       clientPort: 443
-    },
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-        rewrite: path => path.replace(/^\/api/, '')
-      }
-    }
-  },
-
-  css: {
-    modules: {
-      localsConvention: 'camelCase'
-    },
-    preprocessorOptions: {
-      scss: {
-        additionalData: `@import "@/styles/variables.scss";`
-      }
     }
   }
 });
