@@ -5,6 +5,10 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   base: '/',
+  css: {
+    modules: false,
+    devSourcemap: false,
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -19,13 +23,12 @@ export default defineConfig({
       'react-dom',
       'ethers',
       'react-toastify',
-      'framer-motion',
       'bad-words'
     ]
   },
   build: {
     target: 'es2020',
-    minify: 'esbuild', // Заменяем terser на esbuild
+    minify: 'esbuild',
     sourcemap: false,
     outDir: 'dist',
     emptyOutDir: true,
