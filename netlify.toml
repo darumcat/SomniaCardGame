@@ -11,21 +11,22 @@
   NPM_FLAGS = "--legacy-peer-deps --prefer-offline"
   NEXT_TELEMETRY_DISABLED = "1"
   CI = "true"
-  
+
 [[headers]]
   for = "/*"
   [headers.values]
     Content-Security-Policy = """
-      default-src 'self';
-      script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https: 'unsafe-inline';
-      connect-src 'self' https: wss:;
-      style-src 'self' 'unsafe-inline';
+      default-src 'self' https:;
+      script-src 'self' 'unsafe-eval' 'unsafe-inline' https: blob:;
+      style-src 'self' 'unsafe-inline' https:;
       img-src 'self' data: https:;
       font-src 'self' data: https:;
+      connect-src 'self' https: wss:;
       frame-src 'self' https:;
       worker-src 'self' blob:;
+      base-uri 'self';
     """
-    
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
