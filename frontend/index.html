@@ -1,31 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' https:;
-    connect-src *;
-    style-src 'self' 'unsafe-inline';
-    img-src * data:;
-    font-src 'self' data:;
-  ">
-  <title>Somnia Card Game</title>
-</head>
-<body>
-  <div id="root"></div>
-  
-  <!-- Патч для MetaMask/Phantom -->
-  <script>
-    window.__originalEval = window.eval;
-    window.eval = function(str) {
-      if (typeof str === 'string' && str.includes('web3')) {
-        console.warn('Blocked potentially unsafe eval');
-        return;
-      }
-      return window.__originalEval(str);
-    };
-  </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Somnia Card Game</title>
+    <!-- Удалено <base href> (Vite обрабатывает пути автоматически) -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- Удален ручной скрипт (Vite добавит его сам) -->
+  </body>
 </html>
