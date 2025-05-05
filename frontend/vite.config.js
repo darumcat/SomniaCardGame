@@ -43,8 +43,11 @@ export default defineConfig({
   },
   server: {
     open: true,
+    hmr: {
+      clientPort: 443 // Добавлено для корректной работы HMR на Netlify
+    },
     headers: {
-      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'"
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' https: data:; connect-src 'self' https: wss:; frame-src 'self' https:; worker-src 'self' blob:;"
     }
   }
 })
