@@ -9,12 +9,11 @@ const NetworkChecker = () => {
     const checkNetwork = async () => {
       if (window.ethereum && account) {
         const chainId = await window.ethereum.request({ method: 'eth_chainId' })
-        if (chainId !== '0xc4d8') { // 50312 в hex
-          toast.error('Пожалуйста, подключитесь к Somnia Testnet (ChainID: 50312)', {
+        if (chainId !== '0xc4d8') {
+          toast.error('Подключитесь к Somnia Testnet (ChainID: 50312)', {
             position: "top-center",
             autoClose: false,
-            closeOnClick: false,
-            draggable: false
+            closeOnClick: false
           })
         }
       }
@@ -32,4 +31,3 @@ const NetworkChecker = () => {
 }
 
 export default NetworkChecker
-export default NetworkChecker;
