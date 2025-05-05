@@ -26,18 +26,12 @@ export default defineConfig({
   },
   build: {
     target: 'es2020',
-    outDir: 'dist',
-    emptyOutDir: true,
+    minify: 'terser',
     sourcemap: false,
-    rollupOptions: {
-      input: path.resolve(__dirname, 'index.html'),
-      external: ['react-toastify'],
-      output: {
-        format: 'es',
-        generatedCode: 'es2015',
-        assetFileNames: 'assets/[name].[hash][extname]',
-        entryFileNames: 'assets/[name].[hash].js',
-        chunkFileNames: 'assets/[name].[hash].js'
+    terserOptions: {
+      compress: {
+        defaults: false,
+        drop_console: true
       }
     }
   },
