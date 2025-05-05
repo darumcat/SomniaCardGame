@@ -4,10 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Somnia Card Game</title>
-    <!-- Удалено <base href> (Vite обрабатывает пути автоматически) -->
+    <!-- Подключение MetaMask через CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@metamask/providers@12.1.0/dist/metamask-provider.min.js"></script>
   </head>
   <body>
     <div id="root"></div>
-    <!-- Удален ручной скрипт (Vite добавит его сам) -->
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
