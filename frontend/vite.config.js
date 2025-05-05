@@ -30,13 +30,13 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
     rollupOptions: {
-      input: path.resolve(__dirname, 'index.html'), // Важное добавление
+      input: path.resolve(__dirname, 'index.html'),
       external: ['react-toastify'],
       output: {
         format: 'es',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash][extname]'
+        assetFileNames: 'assets/[name].[hash][extname]',  // Изменил дефис на точку
+        entryFileNames: 'assets/[name].[hash].js',       // Изменил дефис на точку
+        chunkFileNames: 'assets/[name].[hash].js'        // Добавил новую строку
       }
     }
   },
