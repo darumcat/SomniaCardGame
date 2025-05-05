@@ -4,6 +4,7 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  base: '/',  // Добавлено - это ключевое изменение для корректного деплоя
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -18,8 +19,8 @@ export default defineConfig({
       'react-dom',
       'ethers',
       'react-toastify',
-      'framer-motion', // Добавлено
-      'bad-words'     // Добавлено
+      'framer-motion',
+      'bad-words'
     ],
     exclude: ['js-big-decimal']
   },
