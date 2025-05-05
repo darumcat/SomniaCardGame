@@ -7,15 +7,16 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      'ethers': path.resolve(__dirname, 'node_modules/ethers/lib.esm.js')
+      'ethers': path.resolve(__dirname, 'node_modules/ethers')
     }
   },
+  optimizeDeps: {
+    include: ['ethers']
+  },
   build: {
-    outDir: 'dist',
     target: 'es2020',
     commonjsOptions: {
-      transformMixedEsModules: true,
-      include: [/node_modules/]
+      transformMixedEsModules: true
     }
   }
 })
