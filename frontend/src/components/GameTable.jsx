@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import ethers from '../ethers-resolver'; // Новый импорт
 import { cleanMessage } from '../../utils/filterWords'
-import { motion, AnimatePresence } from 'framer-motion';
 import './GameTable.css';
 
 // Константы игры
@@ -294,123 +293,62 @@ const GameTable = ({ gameId, mode }) => {
         <p>Осталось карт: {gameState.deck.length}</p>
       </div>
 
-      {/* Карты противника */}
-      <div className="opponent-area">
-        <AnimatePresence>
-          {gameState.opponentHand.map((_, index) => (
-            <motion.div
-              key={`opponent-${index}`}
-              className="card back"
-              initial="hidden"
-              animate="visible"
-              variants={cardAnimation}
-              custom={index}
-            >
-              ?
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-
-      {/* Игровой стол */}
-      <motion.div 
-        className="table-area"
-        variants={tableAnimation}
-        initial="hidden"
-        animate="visible"
-      >
-        <AnimatePresence>
-          {gameState.tableCards.map((card, index) => (
-            <motion.div
-              key={`table-${card.id}`}
-              className={`card ${card.suit} ${card.suit === gameState.trumpSuit ? 'trump' : ''}`}
-              variants={cardAnimation}
-              layoutId={`card-${card.id}`}
-            >
-              {card.rank}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Карты игрока */}
-      <div className="player-area">
-        <AnimatePresence>
-          {gameState.playerHand.map((card, index) => (
-            <motion.div
-              key={`player-${card.id}`}
-              className={`card ${card.suit} ${card.suit === gameState.trumpSuit ? 'trump' : ''}`}
-              variants={cardAnimation}
-              initial="hidden"
-              animate="visible"
-              whileHover="hover"
-              whileTap="tap"
-              custom={index}
-              onClick={() => playCard(index)}
-              layoutId={`card-${card.id}`}
-            >
-              {card.rank}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-
-      {/* Чат (только PVP) */}
-      {mode === 'PVP' && (
-        <div className="chat-container">
-          <div className="chat-messages">
-            {chatMessages.map((msg, i) => (
-              <div key={i} className={`message ${msg.sender === account ? 'own' : 'other'}`}>
-                <strong>{msg.sender === account ? 'Вы' : 'Оппонент'}:</strong> {msg.text}
-              </div>
-            ))}
-          </div>
-          <div className="chat-controls">
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-              placeholder="Введите сообщение..."
-            />
-            <button onClick={sendMessage}>Отправить</button>
-          </div>
-        </div>
-      )}
-
-      {/* Модальное окно окончания игры */}
-      <AnimatePresence>
-        {gameState.gameOver && (
-          <motion.div
-            className="game-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div 
-              className="game-over-modal"
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-            >
-              <h3>{gameState.winner === account ? '🎉 Вы выиграли!' : '😢 Вы проиграли'}</h3>
-              <p>
-                {gameState.winner === account 
-                  ? 'Отличная игра! Ваш рейтинг увеличен.' 
-                  : 'Не расстраивайтесь! Попробуйте еще раз.'}
-              </p>
-              <motion.button
-                onClick={() => window.location.reload()}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                В главное меню
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+// Карты противника
+<div className="opponent-area">
+  {gameState.opponentHand.map((_, index) => (
+    <div
+      key={`opponent-${index}`}
+      className="card back fade-in"
+      style={{ animationDelay: `${index * 0.1}s` }}
+    >
+      ?
     </div>
-  );
-};
+  ))}
+</div>
 
+// Игровой стол
+<div className="table-area">
+  {gameState.tableCards.map((card) => (
+    <div
+      key={`table-${card.id}`}
+      className={`card ${card.suit} ${card.suit === gameState.trumpSuit ? 'trump' : ''} fade-in`}
+    >
+      {card.rank}
+    </div>
+  ))}
+</div>
+
+// Карты игрока
+<div className="player-area">
+  {gameState.playerHand.map((card, index) => (
+    <div
+      key={`player-${card.id}`}
+      className={`card ${card.suit} ${card.suit === gameState.trumpSuit ? 'trump' : ''} fade-in`}
+      style={{ animationDelay: `${index * 0.1}s` }}
+      onClick={() => playCard(index)}
+    >
+      {card.rank}
+    </div>
+  ))}
+</div>
+
+// Модальное окно окончания игры
+{gameState.gameOver && (
+  <div className="game-overlay">
+    <div className="game-over-modal">
+      <h3>{gameState.winner === account ? '🎉 Вы выиграли!' : '😢 Вы проиграли'}</h3>
+      <p>{gameState.winner === account 
+        ? 'Отличная игра! Ваш рейтинг увеличен.' 
+        : 'Не расстраивайтесь! Попробуйте еще раз.'}
+      </p>
+      <button 
+        onClick={() => window.location.reload()}
+        className="connect-button"
+      >
+        В главное меню
+      </button>
+    </div>
+  </div>
+)}
+      
 export default GameTable;
