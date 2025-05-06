@@ -2,17 +2,31 @@ import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import './App.css';
 
-// Конфигурация сети Somnia
 const SOMNIA_CONFIG = {
-  chainId: '0xC498', // 50312
+  chainId: '0xC498', // 50312 в hex
   chainName: 'Somnia Testnet',
   nativeCurrency: {
-    name: 'Somnia Test Token',
-    symbol: 'STT',
+    name: 'Somnia',
+    symbol: 'STT', 
     decimals: 18
   },
-  rpcUrls: ['https://shannon-explorer.somnia.network/'],
-  blockExplorerUrls: ['https://shannon-explorer.somnia.network/']
+  rpcUrls: ['https://rpc.somnia.network/'], // Новый RPC endpoint
+  blockExplorerUrls: ['https://shannon-explorer.somnia.network/'],
+  iconUrls: ['https://somnia.network/logo.png'] // Добавьте реальный URL логотипа
+};
+
+const switchToSomniaNetwork = async () => {
+  try {
+    await window.ethereum.request({
+      method: 'wallet_addEthereumChain',
+      params: [SOMNIA_CONFIG]
+    });
+    return true;
+  } catch (err) {
+    console.error('Network switch error:', err);
+    setError('Failed to switch to Somnia network');
+    return false;
+  }
 };
 
 // Адреса контрактов
@@ -83,26 +97,42 @@ export default function App() {
     }
   };
 
-  const connectWallet = async () => {
-    if (!window.ethereum) {
-      setError('Please install MetaMask!');
-      return;
+const connectWallet = async () => {
+  if (!window.ethereum) {
+    setError('Please install MetaMask!');
+    return;
+  }
+
+  try {
+    // 1. Подключаем аккаунт
+    const accounts = await window.ethereum.request({ 
+      method: 'eth_requestAccounts' 
+    }).catch(err => {
+      if (err.code === 4001) {
+        setError('Connection rejected by user');
+        return null;
+      }
+      throw err;
+    });
+
+    if (!accounts) return;
+
+    // 2. Проверяем сеть
+    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+    
+    if (chainId !== SOMNIA_CONFIG.chainId) {
+      const switched = await switchToSomniaNetwork();
+      if (!switched) return;
     }
 
-    try {
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      }).catch(err => {
-        if (err.code === 4001) {
-          setError('Connection rejected by user');
-          return null;
-        }
-        throw err;
-      });
-
-      if (!accounts) return;
-
-      await setupProvider(accounts[0]);
+    // 3. Инициализируем провайдер
+    await setupProvider(accounts[0]);
+    
+  } catch (err) {
+    setError(err.message || 'Connection failed');
+    console.error('Wallet connection error:', err);
+  }
+};
       
       // Проверка сети
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
@@ -122,6 +152,13 @@ export default function App() {
       console.error('Wallet connection error:', err);
     }
   };
+
+{account && (
+  <div className="network-warning">
+    <p>Current network: {SOMNIA_CONFIG.chainName}</p>
+    <p>Symbol: {SOMNIA_CONFIG.nativeCurrency.symbol}</p>
+  </div>
+)}
 
   return (
     <div className="App">
