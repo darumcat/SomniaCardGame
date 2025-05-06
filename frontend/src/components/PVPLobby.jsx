@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import GameTable from './GameTable';
+import { toast } from 'react-toastify';
 
 const PVPLobby = () => {
   const { account, contracts, usdBalance } = useWeb3();
@@ -9,16 +10,40 @@ const PVPLobby = () => {
   const [isPaid, setIsPaid] = useState(false);
 
   const payEntryFee = async () => {
-    if (usdBalance < 10) {
-      alert("Not enough USDC! Mint more tokens.");
-      return;
+    try {
+      // 1. Проверяем баланс
+      const balance = await contracts.usdcardContract.balanceOf(account);
+      if (balance < 10) {
+        toast.error("Недостаточно USDC! Нужно 10 токенов");
+        return;
+      }
+
+      // 2. Проверяем allowance
+      const allowance = await contracts.usdcardContract.allowance(
+        account,
+        contracts.gameContract.address
+      );
+      
+      if (allowance < 10) {
+        // 3. Делаем approve если нужно
+        const txApprove = await contracts.usdcardContract.approve(
+          contracts.gameContract.address,
+          10
+        );
+        await txApprove.wait();
+      }
+
+      // 4. Вызываем payEntryFee в контракте игры
+      const txPay = await contracts.gameContract.payEntryFee();
+      await txPay.wait();
+      
+      setIsPaid(true);
+      toast.success("Ставка принята!");
+
+    } catch (error) {
+      console.error("Payment error:", error);
+      toast.error(`Ошибка: ${error.reason || error.message.split("(")[0]}`);
     }
-    const tx = await contracts.usdcardContract.approve(
-      contracts.gameContract.address,
-      10
-    );
-    await tx.wait();
-    setIsPaid(true);
   };
 
   const startGame = async () => {
