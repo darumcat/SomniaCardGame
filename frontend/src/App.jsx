@@ -1,29 +1,30 @@
-import { useState } from 'react'
-import { ethers } from 'ethers'
-import './App.css'
+import { useState } from 'react';
+import { ethers } from 'ethers';
+import './App.css';
 
-// Конфиг Somnia Testnet
+// Конфигурация сети Somnia Testnet (ChainID 50312)
 const SOMNIA_CONFIG = {
-  chainId: '0xC498', // 50312
+  chainId: '0xC498', // 50312 в hexadecimal
   chainName: 'Somnia Testnet',
   nativeCurrency: {
-    name: 'STT',
+    name: 'Somnia Test Token',
     symbol: 'STT',
     decimals: 18
   },
   rpcUrls: ['https://dream-rpc.somnia.network/'],
   blockExplorerUrls: ['https://shannon-explorer.somnia.network/']
-}
+};
 
-// Адреса контрактов
+// Адреса контрактов в сети Somnia
 const CONTRACTS = {
   NFT: '0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641',
   USDCARD: '0x14A21748e5E9Da6B0d413256E3ae80ABEBd8CC80',
   CARDGAME: '0x566aaC422C630CE3c093CD2C13C5B3EceCe0D512'
-}
+};
 
-// ВСТАВЬТЕ СЮДА ПОЛНЫЕ ABI ИЗ ВАШИХ ФАЙЛОВ:
+// Вставьте полные ABI из ваших файлов:
 const NFT_ABI = [
+[
 	{
 		"inputs": [
 			{
@@ -633,8 +634,19 @@ const NFT_ABI = [
 		"stateMutability": "view",
 		"type": "function"
 	}
-] // Из ABI NFT.txt
+]
+  {
+    "inputs": [],
+    "name": "mint",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  // ... остальные методы ABI
+];
+
 const USDCARD_ABI = [
+[
 	{
 		"inputs": [],
 		"stateMutability": "nonpayable",
@@ -1218,8 +1230,19 @@ const USDCARD_ABI = [
 		"stateMutability": "view",
 		"type": "function"
 	}
-] // Из ABI USDCard.txt
+]
+  {
+    "inputs": [],
+    "name": "mint",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  // ... остальные методы ABI
+];
+
 const CARDGAME_ABI = [
+[
 	{
 		"inputs": [
 			{
@@ -1725,73 +1748,101 @@ const CARDGAME_ABI = [
 		"stateMutability": "view",
 		"type": "function"
 	}
-] // Из ABI CardGame.txt
+]
+  {
+    "inputs": [
+      {"internalType":"address","name":"_opponent","type":"address"},
+      {"internalType":"enum DurakGame.GameType","name":"_gameType","type":"uint8"}
+    ],
+    "name": "startGame",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  // ... остальные методы ABI
+];
 
 export default function App() {
-  const [account, setAccount] = useState(null)
+  const [account, setAccount] = useState(null);
+  const [nftContract, setNftContract] = useState(null);
+  const [usdCardContract, setUsdCardContract] = useState(null);
+  const [cardGameContract, setCardGameContract] = useState(null);
 
   const connectWallet = async () => {
     if (!window.ethereum) {
-      alert('Установите MetaMask!')
-      return
+      alert('Пожалуйста, установите MetaMask!');
+      return;
     }
 
     try {
-      // 1. Подключаем кошелек
+      // 1. Подключаем аккаунт
       const accounts = await window.ethereum.request({ 
         method: 'eth_requestAccounts' 
-      })
-      setAccount(accounts[0])
+      });
+      setAccount(accounts[0]);
 
-      // 2. Проверяем сеть
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+      // 2. Проверяем и добавляем сеть Somnia при необходимости
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
       if (chainId !== SOMNIA_CONFIG.chainId) {
         await window.ethereum.request({
           method: 'wallet_addEthereumChain',
           params: [SOMNIA_CONFIG]
-        })
+        });
       }
 
       // 3. Инициализируем контракты
-      const provider = new ethers.BrowserProvider(window.ethereum)
-      const signer = await provider.getSigner()
-
-      // Теперь можно использовать:
-      // new ethers.Contract(CONTRACTS.NFT, NFT_ABI, signer)
-      // new ethers.Contract(CONTRACTS.USDCARD, USDCARD_ABI, signer)
-      // new ethers.Contract(CONTRACTS.CARDGAME, CARDGAME_ABI, signer)
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      
+      setNftContract(new ethers.Contract(CONTRACTS.NFT, NFT_ABI, signer));
+      setUsdCardContract(new ethers.Contract(CONTRACTS.USDCARD, USDCARD_ABI, signer));
+      setCardGameContract(new ethers.Contract(CONTRACTS.CARDGAME, CARDGAME_ABI, signer));
 
     } catch (error) {
-      console.error('Ошибка:', error)
+      console.error('Ошибка подключения:', error);
+      alert(`Ошибка: ${error.message}`);
     }
-  }
+  };
 
   const mintNFT = async () => {
-    if (!account) return
+    if (!nftContract) return;
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum)
-      const signer = await provider.getSigner()
-      const contract = new ethers.Contract(CONTRACTS.NFT, NFT_ABI, signer)
-      
-      const tx = await contract.mint()
-      await tx.wait()
-      alert('NFT успешно заминчен!')
+      const tx = await nftContract.mint();
+      await tx.wait();
+      alert('NFT успешно заминчен!');
     } catch (error) {
-      console.error('Ошибка минта:', error)
+      console.error('Ошибка минта NFT:', error);
     }
-  }
+  };
+
+  const mintUSDCard = async () => {
+    if (!usdCardContract) return;
+    try {
+      const tx = await usdCardContract.mint();
+      await tx.wait();
+      alert('USDCard токены успешно заминчены!');
+    } catch (error) {
+      console.error('Ошибка минта USDCard:', error);
+    }
+  };
 
   return (
     <div className="App">
+      <h1>Somnia Card Game</h1>
+      
       {!account ? (
         <button onClick={connectWallet}>Подключить MetaMask</button>
       ) : (
         <div>
-          <p>Адрес: {account}</p>
-          <button onClick={mintNFT}>Получить NFT</button>
+          <p>Подключен: {account}</p>
+          <p>Сеть: Somnia Testnet</p>
+          
+          <div className="actions">
+            <button onClick={mintNFT}>Получить NFT</button>
+            <button onClick={mintUSDCard}>Получить USDCard</button>
+          </div>
         </div>
       )}
     </div>
-  )
+  );
 }
-export default App
