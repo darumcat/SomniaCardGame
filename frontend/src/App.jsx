@@ -1679,7 +1679,11 @@ export default function App() {
         });
       }
 
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const nftContract = new ethers.Contract(
+  CONTRACTS.NFT, 
+  NFT_ABI, 
+  await provider.getSigner()
+);
       const signer = await provider.getSigner();
       
       setNftContract(new ethers.Contract(CONTRACTS.NFT, NFT_ABI, signer));
