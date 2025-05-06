@@ -24,31 +24,28 @@ export default function App() {
 
   // Загружаем ABI файлы
   useEffect(() => {
-    const loadABIs = async () => {
-      try {
-        const cardGameRes = await fetch('/CardGame.json');
-        const nftRes = await fetch('/NFT.json');
-        const usdCardRes = await fetch('/USDCard.json');
-        
-        if (!cardGameRes.ok || !nftRes.ok || !usdCardRes.ok) {
-          throw new Error('Ошибка загрузки ABI файлов');
-        }
+const loadABIs = async () => {
+  try {
+    const cardGameRes = await fetch('/CardGame.json');
+    const nftRes = await fetch('/NFT.json');
+    const usdCardRes = await fetch('/USDCard.json');
+    
+    if (!cardGameRes.ok || !nftRes.ok || !usdCardRes.ok) {
+      throw new Error('Ошибка загрузки ABI файлов');
+    }
 
-        const cardGameData = await cardGameRes.json();
-        const nftData = await nftRes.json();
-        const usdCardData = await usdCardRes.json();
+    const cardGameData = await cardGameRes.json();
+    const nftData = await nftRes.json();
+    const usdCardData = await usdCardRes.json();
 
-        setCardGameABI(cardGameData.abi);
-        setNFTABI(nftData.abi);
-        setUSDCardABI(usdCardData.abi);
-      } catch (err) {
-        console.error('Ошибка загрузки ABI:', err);
-        setError('Не удалось загрузить ABI');
-      }
-    };
-
-    loadABIs();
-  }, []);
+    setCardGameABI(cardGameData.abi);
+    setNFTABI(nftData.abi);
+    setUSDCardABI(usdCardData.abi);
+  } catch (err) {
+    console.error('Ошибка загрузки ABI:', err);
+    setError('Не удалось загрузить ABI');
+  }
+};
 
   const ensureCorrectNetwork = async () => {
     if (!window.ethereum) return false;
