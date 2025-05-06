@@ -1,7 +1,13 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { toast } from 'react-toastify';
-import { CONTRACT_ADDRESSES, getContractABI } from './contracts';
+import { 
+  CONTRACT_ADDRESSES, 
+  getContractABI, 
+  checkNetwork, 
+  switchToSomniaNetwork,
+  SOMNIA_CONFIG
+} from './contracts';
 
 const Web3Context = createContext();
 
@@ -11,65 +17,42 @@ export const Web3Provider = ({ children }) => {
     contracts: null,
     isLoading: true,
     error: null,
-    isMetaMaskInstalled: typeof window.ethereum !== 'undefined'
+    isMetaMaskInstalled: false,
+    isCorrectNetwork: false
   });
 
   const initContracts = useCallback(async (signer) => {
     try {
-      console.log('Initializing contracts...');
-      
       const [nftABI, usdcardABI] = await Promise.all([
         getContractABI('nft'),
         getContractABI('usdcard')
       ]);
 
-      // Валидация ABI
-      const validateABI = (abi, contractName) => {
-        if (!abi.some(item => item.name === 'mint')) {
-          throw new Error(`${contractName} ABI missing mint function`);
-        }
-        if (!abi.some(item => item.name === 'hasMinted')) {
-          console.warn(`${contractName} ABI may be incomplete - hasMinted function missing`);
-        }
-        return true;
-      };
-
-      validateABI(nftABI, 'NFT');
-      validateABI(usdcardABI, 'USDCard');
-
       const contracts = {
-        nft: new ethers.Contract(
-          CONTRACT_ADDRESSES.nft,
-          nftABI,
-          signer
-        ),
-        usdcard: new ethers.Contract(
-          CONTRACT_ADDRESSES.usdcard,
-          usdcardABI,
-          signer
-        ),
+        nft: new ethers.Contract(CONTRACT_ADDRESSES.nft, nftABI, signer),
+        usdcard: new ethers.Contract(CONTRACT_ADDRESSES.usdcard, usdcardABI, signer),
         addresses: CONTRACT_ADDRESSES
       };
 
-      // Тестовая проверка контрактов
-      try {
-        await Promise.all([
-          contracts.nft.hasMinted(signer.address).catch(() => {}),
-          contracts.usdcard.hasMinted(signer.address).catch(() => {})
-        ]);
-      } catch (testError) {
-        console.warn('Contract test calls failed:', testError);
-      }
+      // Диагностика контрактов
+      useEffect(() => {
+        if (contracts?.nft) {
+          console.log("NFT contract methods:", 
+            contracts.nft.interface.fragments.map(f => f.name));
+          
+          contracts.nft.hasMinted(signer.address)
+            .then(hasMinted => console.log("NFT already minted:", hasMinted))
+            .catch(console.error);
+        }
+      }, [contracts, signer]);
 
       setState(prev => ({
         ...prev,
         contracts,
         error: null
       }));
-
-      console.log('Contracts initialized successfully:', contracts);
     } catch (error) {
-      console.error('Contract initialization failed:', error);
+      console.error("Contract initialization failed:", error);
       setState(prev => ({
         ...prev,
         error: error.message
@@ -79,7 +62,8 @@ export const Web3Provider = ({ children }) => {
   }, []);
 
   const connectWallet = useCallback(async () => {
-    if (!state.isMetaMaskInstalled) {
+    if (!window.ethereum) {
+      setState(prev => ({ ...prev, isMetaMaskInstalled: false }));
       toast.error('Please install MetaMask!');
       return;
     }
@@ -87,29 +71,29 @@ export const Web3Provider = ({ children }) => {
     try {
       setState(prev => ({ ...prev, isLoading: true }));
 
+      const isCorrectNetwork = await checkNetwork();
+      if (!isCorrectNetwork) {
+        const switched = await switchToSomniaNetwork();
+        if (!switched) throw new Error('Please switch to Somnia Testnet');
+      }
+
       const accounts = await window.ethereum.request({ 
         method: 'eth_requestAccounts' 
       });
       
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      const network = await provider.getNetwork();
-
-      console.log('Connected to:', {
-        account: accounts[0],
-        chainId: network.chainId,
-        network: network.name
-      });
-
+      
       await initContracts(signer);
 
       setState(prev => ({
         ...prev,
         account: accounts[0],
+        isMetaMaskInstalled: true,
+        isCorrectNetwork: true,
         isLoading: false
       }));
 
-      toast.success(`Connected to ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`);
     } catch (error) {
       console.error('Connection error:', error);
       setState(prev => ({
@@ -119,31 +103,42 @@ export const Web3Provider = ({ children }) => {
       }));
       toast.error(error.message.includes('rejected') 
         ? 'Connection rejected' 
-        : 'Failed to connect wallet');
+        : error.message);
     }
-  }, [initContracts, state.isMetaMaskInstalled]);
+  }, [initContracts]);
 
   useEffect(() => {
-    if (!state.isMetaMaskInstalled) {
-      setState(prev => ({ ...prev, isLoading: false }));
-      return;
-    }
+    const init = async () => {
+      const isInstalled = !!window.ethereum;
+      setState(prev => ({ ...prev, isMetaMaskInstalled: isInstalled }));
 
-    const checkConnection = async () => {
+      if (!isInstalled) {
+        setState(prev => ({ ...prev, isLoading: false }));
+        return;
+      }
+
       try {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         if (accounts.length > 0) {
+          const isCorrectNetwork = await checkNetwork();
+          if (!isCorrectNetwork) {
+            setState(prev => ({ ...prev, isCorrectNetwork: false }));
+            return;
+          }
+
           const provider = new ethers.BrowserProvider(window.ethereum);
           const signer = await provider.getSigner();
           await initContracts(signer);
+
           setState(prev => ({
             ...prev,
             account: accounts[0],
+            isCorrectNetwork: true,
             isLoading: false
           }));
         }
       } catch (error) {
-        console.error('Initial connection check failed:', error);
+        console.error('Initialization error:', error);
       } finally {
         setState(prev => ({ ...prev, isLoading: false }));
       }
@@ -158,25 +153,27 @@ export const Web3Provider = ({ children }) => {
     };
 
     const handleChainChanged = (chainId) => {
-      console.log('Chain changed:', chainId);
-      window.location.reload();
+      const isCorrect = chainId === SOMNIA_CONFIG.chainId;
+      setState(prev => ({ ...prev, isCorrectNetwork: isCorrect }));
+      if (!isCorrect) toast.warning('Please switch to Somnia Testnet');
     };
 
-    checkConnection();
+    init();
 
-    window.ethereum.on('accountsChanged', handleAccountsChanged);
-    window.ethereum.on('chainChanged', handleChainChanged);
+    window.ethereum?.on('accountsChanged', handleAccountsChanged);
+    window.ethereum?.on('chainChanged', handleChainChanged);
 
     return () => {
       window.ethereum?.removeListener('accountsChanged', handleAccountsChanged);
       window.ethereum?.removeListener('chainChanged', handleChainChanged);
     };
-  }, [initContracts, state.isMetaMaskInstalled]);
+  }, [initContracts]);
 
   return (
     <Web3Context.Provider value={{
       ...state,
       connect: connectWallet,
+      networkConfig: SOMNIA_CONFIG,
       resetError: () => setState(prev => ({ ...prev, error: null }))
     }}>
       {children}
