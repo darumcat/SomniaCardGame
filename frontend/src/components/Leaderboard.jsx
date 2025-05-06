@@ -7,35 +7,41 @@ const Leaderboard = () => {
 
   useEffect(() => {
     const fetchLeaders = async () => {
-      // В реальном проекте здесь будет вызов вашего API или контракта
-      const mockLeaders = [
-        { address: '0x123...456', score: 15000 },
-        { address: '0x789...012', score: 12000 },
-        // ... другие игроки
-      ];
-      setLeaders(mockLeaders);
+      const transferEvents = await contracts.usdcardContract.queryFilter("Transfer");
+      const balances = {};
+      
+      transferEvents.forEach(event => {
+        const [from, to, value] = event.args;
+        balances[to] = (balances[to] || 0) + value;
+      });
+      
+      const sorted = Object.entries(balances)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 100);
+      
+      setLeaders(sorted);
     };
 
-    fetchLeaders();
-  }, []);
+    if (contracts) fetchLeaders();
+  }, [contracts]);
 
   return (
     <div className="leaderboard">
-      <h2>Топ 100 игроков</h2>
+      <h2>Top 100 Players</h2>
       <table>
         <thead>
           <tr>
-            <th>Место</th>
-            <th>Адрес</th>
-            <th>Очки</th>
+            <th>Rank</th>
+            <th>Address</th>
+            <th>USDC Balance</th>
           </tr>
         </thead>
         <tbody>
-          {leaders.map((player, index) => (
-            <tr key={index}>
+          {leaders.map(([address, balance], index) => (
+            <tr key={address}>
               <td>{index + 1}</td>
-              <td>{player.address}</td>
-              <td>{player.score}</td>
+              <td>{`${address.slice(0, 6)}...${address.slice(-4)}`}</td>
+              <td>{ethers.formatUnits(balance, 18)}</td>
             </tr>
           ))}
         </tbody>
