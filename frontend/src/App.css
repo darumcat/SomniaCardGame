@@ -1,122 +1,36 @@
-/* Основные стили */
+/* Основной градиентный фон */
 .App {
   text-align: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background: linear-gradient(135deg, #0057FF 0%, #A533FF 100%);
+  font-family: 'Arial', sans-serif;
+  color: white;
+}
+
+/* Контейнер контента */
+.content-container {
   max-width: 800px;
   margin: 0 auto;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
   padding: 2rem;
-  font-family: 'Arial', sans-serif;
-  color: #333;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Кнопка подключения */
-.connect-button {
-  background-color: #4e44ce;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  font-size: 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  margin: 1rem 0;
-  font-weight: bold;
-}
-
-.connect-button:hover {
-  background-color: #3a30b0;
-}
-
-.connect-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-/* Контейнеры */
-.game-container {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 2rem;
-  margin-top: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.wallet-info {
-  background: #eef2ff;
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.mint-section, .game-section {
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin: 1.5rem 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-/* Кнопки действий */
-.mint-section button, .game-button {
-  background: #4a6fa5;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  margin: 0.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.3s;
-  font-size: 0.9rem;
-}
-
-.mint-section button:hover, .game-button:hover {
-  background: #3a5a80;
-}
-
-/* Поля ввода */
-.game-input {
-  padding: 10px;
-  width: 300px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  margin-right: 10px;
-  font-size: 0.9rem;
-}
-
-/* Сообщения об ошибках */
-.error-message {
-  color: #d32f2f;
-  background-color: #fde8e8;
-  padding: 12px;
-  border-radius: 8px;
-  margin: 1rem auto;
-  max-width: 500px;
-}
-
-/* Адаптивность */
-@media (max-width: 600px) {
-  .App {
-    padding: 1rem;
-  }
-  
-  .game-input {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-  
-  .mint-section, .game-section {
-    padding: 1rem;
-  }
-}
-
+/* Стили ошибок */
 .error {
-  background: #ffebee;
+  background: rgba(255, 235, 238, 0.9);
   color: #d32f2f;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 12px;
   margin: 1rem 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .error button {
@@ -125,9 +39,107 @@
   color: #d32f2f;
   font-size: 1.2rem;
   cursor: pointer;
+  transition: transform 0.2s;
 }
 
-button:disabled {
-  opacity: 0.7;
+.error button:hover {
+  transform: scale(1.1);
+}
+
+/* Кнопки */
+.connect-button {
+  background: linear-gradient(45deg, #FF0D6E 0%, #00D4FF 100%);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.connect-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, #00D4FF 0%, #FF0D6E 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+  border-radius: 50px;
+}
+
+.connect-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
+}
+
+.connect-button:hover::before {
+  opacity: 1;
+}
+
+.connect-button:disabled {
+  background: #cccccc;
+  box-shadow: none;
+  transform: none;
   cursor: not-allowed;
+}
+
+/* Информация о кошельке */
+.wallet-info {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1.5rem;
+  border-radius: 15px;
+  margin-top: 2rem;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Дополнительные элементы */
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(90deg, #FFFFFF 0%, #E0E0E0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+p {
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.content-container {
+  animation: fadeIn 0.6s ease-out;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .App {
+    padding: 1rem;
+  }
+  
+  .content-container {
+    padding: 1.5rem;
+  }
+  
+  h1 {
+    font-size: 2rem;
+  }
 }
