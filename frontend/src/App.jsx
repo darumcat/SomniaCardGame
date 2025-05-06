@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { BrowserProvider } from 'ethers';
+import { useWeb3 } from './context/Web3Context';
+import MintSection from './components/MintSection';
+import GameLobby from './components/GameLobby';
+import Leaderboard from './components/Leaderboard';
 import './App.css';
 
 const SOMNIA_CONFIG = {
@@ -15,42 +18,11 @@ const SOMNIA_CONFIG = {
 };
 
 export default function App() {
-  const [account, setAccount] = useState(null);
+  const { account, nftBalance, connectWallet } = useWeb3();
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [cardGameABI, setCardGameABI] = useState(null);
-  const [nftABI, setNFTABI] = useState(null);
-  const [usdCardABI, setUSDCardABI] = useState(null);
+  const [activeTab, setActiveTab] = useState('game'); // 'game' или 'leaderboard'
 
-  // Загрузка ABI файлов
-  const loadABIs = async () => {
-    try {
-      const cardGameRes = await fetch('/CardGame.json');
-      const nftRes = await fetch('/NFT.json');
-      const usdCardRes = await fetch('/USDCard.json');
-
-      if (!cardGameRes.ok || !nftRes.ok || !usdCardRes.ok) {
-        throw new Error('Ошибка загрузки ABI файлов');
-      }
-
-      const cardGameData = await cardGameRes.json();
-      const nftData = await nftRes.json();
-      const usdCardData = await usdCardRes.json();
-
-      setCardGameABI(cardGameData.abi);
-      setNFTABI(nftData.abi);
-      setUSDCardABI(usdCardData.abi);
-    } catch (err) {
-      console.error('Ошибка загрузки ABI:', err);
-      setError('Не удалось загрузить ABI');
-    }
-  };
-
-  useEffect(() => {
-    loadABIs();
-  }, []);
-
-  // Проверка и переключение сети при необходимости
   const ensureCorrectNetwork = async () => {
     if (!window.ethereum) return false;
     try {
@@ -61,6 +33,7 @@ export default function App() {
             method: 'wallet_switchEthereumChain',
             params: [{ chainId: SOMNIA_CONFIG.chainId }],
           });
+          return true;
         } catch (switchError) {
           if (switchError.code === 4902) {
             try {
@@ -68,14 +41,13 @@ export default function App() {
                 method: 'wallet_addEthereumChain',
                 params: [SOMNIA_CONFIG],
               });
+              return true;
             } catch (addError) {
               console.error('Ошибка добавления сети:', addError);
               return false;
             }
-          } else {
-            console.error('Ошибка переключения сети:', switchError);
-            return false;
           }
+          return false;
         }
       }
       return true;
@@ -85,7 +57,7 @@ export default function App() {
     }
   };
 
-  const connectWallet = async () => {
+  const handleConnect = async () => {
     if (!window.ethereum) {
       setError('Please install MetaMask!');
       return;
@@ -100,21 +72,7 @@ export default function App() {
         throw new Error(`Please connect to ${SOMNIA_CONFIG.chainName}`);
       }
 
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      if (!accounts || accounts.length === 0) {
-        throw new Error('No accounts found');
-      }
-
-      const provider = new BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-
-      // ✍️ Подписание сообщения
-      const message = `Sign in to Somnia Card Game.
-
-This signature is required to verify your identity. No funds will be withdrawn from your wallet. Only in-game transactions using internal assets may occur.`;
-      await signer.signMessage(message);
-
-      setAccount(accounts[0]);
+      await connectWallet();
     } catch (err) {
       console.error('Connection error:', err);
       setError(err.message);
@@ -122,13 +80,6 @@ This signature is required to verify your identity. No funds will be withdrawn f
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (window.ethereum) {
-      window.ethereum.on('chainChanged', () => window.location.reload());
-      window.ethereum.on('accountsChanged', () => window.location.reload());
-    }
-  }, []);
 
   return (
     <div className="App">
@@ -144,16 +95,43 @@ This signature is required to verify your identity. No funds will be withdrawn f
 
         {!account ? (
           <button 
-            onClick={connectWallet}
+            onClick={handleConnect}
             disabled={isLoading}
             className="connect-button"
           >
             {isLoading ? 'Connecting...' : 'Connect MetaMask'}
           </button>
         ) : (
-          <div className="wallet-info">
-            <p>Connected: {account.slice(0, 6)}...{account.slice(-4)}</p>
-            <p>Network: {SOMNIA_CONFIG.chainName}</p>
+          <div className="game-container">
+            <div className="tabs">
+              <button 
+                className={activeTab === 'game' ? 'active' : ''}
+                onClick={() => setActiveTab('game')}
+              >
+                Game
+              </button>
+              <button 
+                className={activeTab === 'leaderboard' ? 'active' : ''}
+                onClick={() => setActiveTab('leaderboard')}
+              >
+                Leaderboard
+              </button>
+            </div>
+
+            {activeTab === 'game' ? (
+              <>
+                {nftBalance > 0 ? (
+                  <GameLobby />
+                ) : (
+                  <>
+                    <p>You need an NFT to play!</p>
+                    <MintSection />
+                  </>
+                )}
+              </>
+            ) : (
+              <Leaderboard />
+            )}
           </div>
         )}
       </div>
