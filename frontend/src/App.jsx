@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import './App.css';
 
 const SOMNIA_CONFIG = {
-  chainId: '0xC498',
+  chainId: '0xC488',
   chainName: 'Somnia Testnet',
   nativeCurrency: {
     name: 'Somnia',
@@ -124,27 +124,29 @@ export default function App() {
 
   return (
     <div className="App">
-      <h1>Somnia Card Game</h1>
+      <div className="content-container">
+        <h1>Somnia Card Game</h1>
 
-      {error && (
-        <div className="error">
-          <p>{error}</p>
-          <button onClick={() => setError(null)}>×</button>
-        </div>
-      )}
-
-      {!account ? (
-        <button onClick={connectWallet}>Connect MetaMask</button>
-      ) : (
-        <div className="wallet-info">
-          <p>Connected: {account}</p>
-          <p>Network: Somnia Testnet</p>
-          <div className="network-warning">
-            <p>Current network: {SOMNIA_CONFIG.chainName}</p>
-            <p>Symbol: {SOMNIA_CONFIG.nativeCurrency.symbol}</p>
+        {error && (
+          <div className="error">
+            <p>{error}</p>
+            <button onClick={() => setError(null)}>×</button>
           </div>
-        </div>
-      )}
+        )}
+
+        {!account ? (
+          <button onClick={connectWallet}>Connect MetaMask</button>
+        ) : (
+          <div className="wallet-info">
+            <p>Connected: {account}</p>
+            <p>Network: Somnia Testnet</p>
+            <div className="network-warning">
+              <p>Current network: {SOMNIA_CONFIG.chainName}</p>
+              <p>Symbol: {SOMNIA_CONFIG.nativeCurrency.symbol}</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
