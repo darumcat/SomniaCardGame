@@ -3,41 +3,21 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
-  // Базовый путь для production (Netlify)
   base: '/',
-  
-  // Плагины
-  plugins: [
-     plugins: [react()],
-  build: {
-    target: 'es2020',
-    minify: 'terser',
-    sourcemap: false
-  }
-})
-  ],
-  
-  // Настройки разрешения модулей
+  plugins: [react()],
   resolve: {
     alias: {
-      // Основные алиасы
       '@': path.resolve(__dirname, './src'),
       '@utils': path.resolve(__dirname, './utils'),
       '@components': path.resolve(__dirname, './src/components'),
       '@assets': path.resolve(__dirname, './src/assets'),
-      
-      // Web3 и кошельки
       'web3': path.resolve(__dirname, './utils/web3.js'),
       '@metamask/providers': path.resolve(__dirname, './node_modules/@metamask/providers/dist/metamask-provider.min.js'),
-      
-      // Фикс для ethers.js
       'ethers': path.resolve(__dirname, './node_modules/ethers/dist/ethers.min.js'),
       'ethers/': path.resolve(__dirname, './node_modules/ethers/')
     },
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.json']
   },
-
-  // Оптимизация зависимостей
   optimizeDeps: {
     include: [
       'react',
@@ -47,27 +27,17 @@ export default defineConfig({
       'framer-motion',
       'zustand'
     ],
-    exclude: [
-      '@metamask/providers'
-    ],
-    esbuildOptions: {
-      target: 'es2020'
-    }
+    exclude: ['@metamask/providers'],
+    esbuildOptions: { target: 'es2020' }
   },
-
-  // Настройки сборки
   build: {
     target: 'es2020',
     minify: 'terser',
     sourcemap: false,
     chunkSizeWarningLimit: 3000,
     emptyOutDir: true,
-    
     rollupOptions: {
-      external: [
-        '@metamask/providers',
-        'web3'
-      ],
+      external: ['@metamask/providers', 'web3'],
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
@@ -80,22 +50,15 @@ export default defineConfig({
         assetFileNames: 'assets/[name].[hash][extname]',
         entryFileNames: 'assets/[name].[hash].js',
         chunkFileNames: 'assets/[name].[hash].js',
-        globals: {
-          'ethers': 'ethers'
-        }
+        globals: { 'ethers': 'ethers' }
       }
     }
   },
-
-  // Настройки сервера разработки
   server: {
     port: 3000,
     open: true,
     strictPort: true,
-    hmr: {
-      protocol: 'wss',
-      host: 'localhost'
-    },
+    hmr: { protocol: 'wss', host: 'localhost' },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
@@ -104,12 +67,8 @@ export default defineConfig({
       }
     }
   },
-
-  // CSS/SCSS обработка
   css: {
-    modules: {
-      localsConvention: 'camelCaseOnly'
-    },
+    modules: { localsConvention: 'camelCaseOnly' },
     preprocessorOptions: {
       scss: {
         additionalData: `
