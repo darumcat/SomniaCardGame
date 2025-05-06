@@ -6,16 +6,10 @@ export default defineConfig({
   build: {
     sourcemap: false,
     minify: 'esbuild',
-    target: 'esnext',
-    outDir: 'dist',
-    emptyOutDir: true
+    target: 'esnext'
   },
   server: {
     port: 3000,
-    strictPort: true,
-    open: true
-  },
-  define: {
-    'process.env': {}
+    strictPort: true
   }
 });
