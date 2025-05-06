@@ -15,17 +15,26 @@ const MintSection = () => {
     setIsMintingNFT(true);
     try {
       const tx = await contracts.nftContract.mint();
-      await tx.wait(); // Ждём подтверждения транзакции
+      await tx.wait();
       toast.success("NFT successfully minted!");
-      await updateBalances(); // Обновляем балансы
-
-      // Проверяем баланс NFT
+      await updateBalances();
+      
       const balance = await contracts.nftContract.balanceOf(account);
       console.log("NFT Balance:", balance.toString());
       
     } catch (error) {
       console.error("Mint error:", error);
-      toast.error(`Error: ${error.reason || error.message.split("(")[0]}`);
+      
+      // Обработка конкретной ошибки "Already minted"
+      if (error.message.includes("Already minted") || error.reason?.includes("Already minted")) {
+        toast.warning("You've already minted this NFT!");
+      } else {
+        // Общая обработка других ошибок
+        const errorMsg = error.reason || 
+                        error.data?.message || 
+                        error.message.split("(")[0];
+        toast.error(`Error: ${errorMsg}`);
+      }
     } finally {
       setIsMintingNFT(false);
     }
@@ -43,7 +52,17 @@ const MintSection = () => {
       toast.success("USDC tokens minted!");
       await updateBalances();
     } catch (error) {
-      toast.error(`Error: ${error.message.split('(')[0]}`);
+      console.error("Mint USD error:", error);
+      
+      // Аналогичная обработка для USDC
+      if (error.message.includes("Already minted") || error.reason?.includes("Already minted")) {
+        toast.warning("You've already minted USDC tokens!");
+      } else {
+        const errorMsg = error.reason || 
+                       error.data?.message || 
+                       error.message.split('(')[0];
+        toast.error(`Error: ${errorMsg}`);
+      }
     } finally {
       setIsMintingUSD(false);
     }
