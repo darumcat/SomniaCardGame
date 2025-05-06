@@ -1,18 +1,13 @@
-import Filter from 'bad-words';
+// frontend/src/context/filterWords.js
+import Filter from 'bad-words'; // Используем ES-импорт
 
 const filter = new Filter({ placeHolder: '*' });
-
-// Добавьте свои запрещенные слова (можно вынести в конфиг)
-filter.addWords(
-  'мат1', 'мат2', 'мат3' // замените на реальные слова
-);
+filter.addWords('плохоеслово', 'другоемат');
 
 export const cleanMessage = (text) => {
-  if (!text || typeof text !== 'string') return '';
   try {
     return filter.clean(text);
-  } catch (error) {
-    console.error('Filter error:', error);
+  } catch {
     return text;
   }
 };
