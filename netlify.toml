@@ -2,29 +2,18 @@
   command = "cd frontend && npm install --legacy-peer-deps && npm run build"
   publish = "frontend/dist"
 
-[build.environment]
-  NODE_VERSION = "18"
-  NPM_FLAGS = "--legacy-peer-deps"
-
-# Редиректы для SPA
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-# Разрешаем необходимые политики для MetaMask/Phantom
 [[headers]]
   for = "/*"
   [headers.values]
     Content-Security-Policy = """
-      default-src 'self' https:;
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:;
-      connect-src 'self' https: wss:;
+      default-src 'self';
+      script-src 'self' 'unsafe-eval' https: blob:;
+      connect-src 'self' https://shannon-explorer.somnia.network/ wss:;
       style-src 'self' 'unsafe-inline';
       img-src 'self' data: https: blob:;
       font-src 'self' data:;
       frame-src 'self' https:;
       worker-src 'self' blob:;
     """
-    X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
