@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ethers } from 'ethers';
+import { BrowserProvider } from 'ethers';
 import './App.css';
 
 const SOMNIA_CONFIG = {
@@ -14,17 +14,41 @@ const SOMNIA_CONFIG = {
   blockExplorerUrls: ['https://shannon-explorer.somnia.network/'],
 };
 
-const CONTRACT_ADDRESSES = {
-  CardGame: '0x566aaC422C630CE3c093CD2C13C5B3EceCe0D512',
-  NFT: '0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641',
-  USDCard: '0x14A21748e5E9Da6B0d413256E3ae80ABEBd8CC80',
-};
-
 export default function App() {
   const [account, setAccount] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [contracts, setContracts] = useState({});
+  const [CardGameABI, setCardGameABI] = useState(null);
+  const [NFTABI, setNFTABI] = useState(null);
+  const [USDCardABI, setUSDCardABI] = useState(null);
+
+  // Загружаем ABI файлы
+  useEffect(() => {
+    const loadABIs = async () => {
+      try {
+        const cardGameRes = await fetch('/CardGame.json');
+        const nftRes = await fetch('/NFT.json');
+        const usdCardRes = await fetch('/USDCard.json');
+        
+        if (!cardGameRes.ok || !nftRes.ok || !usdCardRes.ok) {
+          throw new Error('Ошибка загрузки ABI файлов');
+        }
+
+        const cardGameData = await cardGameRes.json();
+        const nftData = await nftRes.json();
+        const usdCardData = await usdCardRes.json();
+
+        setCardGameABI(cardGameData.abi);
+        setNFTABI(nftData.abi);
+        setUSDCardABI(usdCardData.abi);
+      } catch (err) {
+        console.error('Ошибка загрузки ABI:', err);
+        setError('Не удалось загрузить ABI');
+      }
+    };
+
+    loadABIs();
+  }, []);
 
   const ensureCorrectNetwork = async () => {
     if (!window.ethereum) return false;
@@ -80,28 +104,14 @@ export default function App() {
         throw new Error('No accounts found');
       }
 
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
 
-      // Подписание сообщения
+      // ✍️ Подписание сообщения
       const message = `Sign in to Somnia Card Game.
-
-This signature is required to verify your identity. No funds will be withdrawn from your wallet. Only in-game transactions using internal assets may occur.`;
+      This signature is required to verify your identity. No funds will be withdrawn from your wallet. Only in-game transactions using internal assets may occur.`;
       await signer.signMessage(message);
 
-      // Динамическая загрузка ABI контракта
-      const [CardGameArtifact, NFTArtifact, USDCardArtifact] = await Promise.all([
-        import('../contracts/CardGame.json'),
-        import('../contracts/NFT.json'),
-        import('../contracts/USDCard.json'),
-      ]);
-
-      // Подключение контрактов
-      const cardGame = new ethers.Contract(CONTRACT_ADDRESSES.CardGame, CardGameArtifact.abi, signer);
-      const nft = new ethers.Contract(CONTRACT_ADDRESSES.NFT, NFTArtifact.abi, signer);
-      const usdCard = new ethers.Contract(CONTRACT_ADDRESSES.USDCard, USDCardArtifact.abi, signer);
-
-      setContracts({ cardGame, nft, usdCard });
       setAccount(accounts[0]);
     } catch (err) {
       console.error('Connection error:', err);
