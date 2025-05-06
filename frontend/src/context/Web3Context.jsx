@@ -1,11 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { 
-  isMetaMaskConnected, 
-  initEthersProvider, 
+import { ethers } from 'ethers';
+import {
+  isMetaMaskConnected,
+  initEthersProvider,
   connectWallet,
   setupListeners
-} from '../utils/web3';
+} from '@utils/web3';
 
 const Web3Context = createContext();
 
