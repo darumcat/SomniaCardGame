@@ -1,4 +1,7 @@
-// contracts.js
+const cardGameABI = require(`${process.env.PUBLIC_URL}/CardGame.json`);
+const nftABI = require(`${process.env.PUBLIC_URL}/NFT.json`);
+const usdCardABI = require(`${process.env.PUBLIC_URL}/USDCard.json`);
+
 export const CONTRACT_ADDRESSES = {
   nft: '0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641',
   usdcard: '0x14A21748e5E9Da6B0d413256E3ae80ABEBd8CC80',
@@ -6,6 +9,11 @@ export const CONTRACT_ADDRESSES = {
 };
 
 export const getContractABI = (contractName) => {
+  if (contractName === 'game') return cardGameABI;
+  if (contractName === 'nft') return nftABI;
+  if (contractName === 'usdcard') return usdCardABI;
+
+  // Default return basic ABI for unknown contract names
   const basicABI = [
     "function balanceOf(address) view returns (uint256)",
     "function mint()",
@@ -13,16 +21,7 @@ export const getContractABI = (contractName) => {
     "event Transfer(address indexed from, address indexed to, uint256 value)"
   ];
   
-  const gameABI = [
-    "function startGame(address, uint8)",
-    "function sendMessage(uint256, string)",
-    "function commitChoice(uint256, bytes32)",
-    "function revealChoice(uint256, address, bytes32)",
-    "event GameStarted(uint256 indexed gameId, address player1, address player2, uint8 gameType)",
-    "event MessageSent(uint256 indexed gameId, address sender, string text)"
-  ];
-
-  return contractName === 'game' ? gameABI : basicABI;
+  return basicABI;
 };
 
 // Необязательная проверка адресов при импорте
@@ -33,3 +32,4 @@ if (typeof window !== 'undefined') {
     }
   });
 }
+
