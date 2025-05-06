@@ -6,7 +6,8 @@ import {
   initEthersProvider,
   connectWallet,
   setupListeners
-} from '@utils/web3';
+} from '@/utils/web3';
+import { CONTRACT_ADDRESSES, getContractABI } from '@contracts';
 
 const Web3Context = createContext();
 
@@ -17,19 +18,28 @@ export const Web3Provider = ({ children }) => {
 
   const initContracts = useCallback(async (signer) => {
     try {
+      const [nftABI, usdcardABI] = await Promise.all([
+        getContractABI('nft'),
+        getContractABI('usdcard')
+      ]);
+
       const nftContract = new ethers.Contract(
-        import.meta.env.VITE_NFT_CONTRACT_ADDRESS,
-        NFT_ABI,
+        CONTRACT_ADDRESSES.nft,
+        nftABI,
         signer
       );
       
       const usdcardContract = new ethers.Contract(
-        import.meta.env.VITE_USDCARD_CONTRACT_ADDRESS,
-        USDCARD_ABI,
+        CONTRACT_ADDRESSES.usdcard,
+        usdcardABI,
         signer
       );
 
-      setContracts({ nftContract, usdcardContract });
+      setContracts({ 
+        nftContract, 
+        usdcardContract,
+        addresses: CONTRACT_ADDRESSES
+      });
     } catch (error) {
       console.error("Contract init error:", error);
       toast.error("Failed to load contracts");
@@ -52,8 +62,9 @@ export const Web3Provider = ({ children }) => {
       const { address, signer } = await connectWallet();
       setAccount(address);
       await initContracts(signer);
+      toast.success("Wallet connected!");
     } catch (error) {
-      toast.error(error.message);
+      toast.error(`Connection failed: ${error.message}`);
     }
   }, [initContracts]);
 
@@ -92,7 +103,8 @@ export const Web3Provider = ({ children }) => {
       account, 
       contracts, 
       isLoading, 
-      connect 
+      connect,
+      isConnected: !!account
     }}>
       {children}
     </Web3Context.Provider>
