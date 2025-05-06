@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import './App.css';
 
-// Конфигурация сети Somnia (Chain ID 50312)
+// Конфигурация сети Somnia Testnet (Chain ID 50312)
 const SOMNIA_CONFIG = {
-  chainId: '0xC488',
+  chainId: '0xC488', // 50312 в HEX
   chainName: 'Somnia Testnet',
   nativeCurrency: {
     name: 'Somnia',
@@ -22,8 +22,8 @@ const CONTRACTS = {
   CARDGAME: '0x566aaC422C630CE3c093CD2C13C5B3EceCe0D512'
 };
 
-const NFT_ABI = 
-  [
+// ABI контрактов (ЗАМЕНИТЕ НА ПОЛНЫЕ ABI ИЗ ВАШИХ ФАЙЛОВ!)
+const NFT_ABI = [
 	{
 		"inputs": [
 			{
@@ -636,7 +636,6 @@ const NFT_ABI =
 ];
 
 const USDCARD_ABI = [
- 
 	{
 		"inputs": [],
 		"stateMutability": "nonpayable",
@@ -1223,7 +1222,6 @@ const USDCARD_ABI = [
 ];
 
 const CARDGAME_ABI = [
-  
 	{
 		"inputs": [
 			{
@@ -1740,7 +1738,6 @@ export default function App() {
   const [cardGameContract, setCardGameContract] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [gameStatus, setGameStatus] = useState('not_started');
 
   // Инициализация контрактов
   useEffect(() => {
@@ -1759,11 +1756,22 @@ export default function App() {
 
     setIsLoading(true);
     try {
+      // 1. Подключаем аккаунт
       const accounts = await window.ethereum.request({ 
         method: 'eth_requestAccounts' 
+      }).catch(err => {
+        if (err.code === 4001) {
+          setError('Connection rejected by user');
+          return null;
+        }
+        throw err;
       });
 
+      if (!accounts) return;
+
+      // 2. Проверяем сеть
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      
       if (chainId !== SOMNIA_CONFIG.chainId) {
         await window.ethereum.request({
           method: 'wallet_addEthereumChain',
@@ -1771,12 +1779,15 @@ export default function App() {
         });
       }
 
+      // 3. Инициализируем провайдер
       const browserProvider = new ethers.BrowserProvider(window.ethereum);
       setProvider(browserProvider);
       setSigner(await browserProvider.getSigner());
       setAccount(accounts[0]);
+      setError(null);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Connection failed');
+      console.error('Wallet connection error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -1789,7 +1800,7 @@ export default function App() {
       await tx.wait();
       alert('NFT minted successfully!');
     } catch (err) {
-      setError('NFT mint failed');
+      setError('NFT mint failed: ' + err.message);
     }
   };
 
@@ -1799,18 +1810,18 @@ export default function App() {
       await tx.wait();
       alert(`${amount} USDCard tokens minted!`);
     } catch (err) {
-      setError('USDCard mint failed');
+      setError('USDCard mint failed: ' + err.message);
     }
   };
 
   // Игровые функции
   const startGame = async (opponentAddress) => {
     try {
-      const tx = await cardGameContract.startGame(opponentAddress, 0); // 0 - обычная игра
+      const tx = await cardGameContract.startGame(opponentAddress, 0);
       await tx.wait();
-      setGameStatus('started');
+      alert('Game started successfully!');
     } catch (err) {
-      setError('Game start failed');
+      setError('Game start failed: ' + err.message);
     }
   };
 
@@ -1818,19 +1829,26 @@ export default function App() {
     <div className="App">
       <h1>Somnia Card Game</h1>
       
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
+
       {!account ? (
         <button 
           className="connect-button"
           onClick={connectWallet}
           disabled={isLoading}
         >
-          {isLoading ? 'Connecting...' : 'Connect Wallet'}
+          {isLoading ? 'Connecting...' : 'Connect MetaMask'}
         </button>
       ) : (
         <div className="game-container">
           <div className="wallet-info">
-            <p>Connected: {account.slice(0, 6)}...{account.slice(-4)}</p>
-            <p>Network: {SOMNIA_CONFIG.chainName}</p>
+            <h2>Wallet Connected</h2>
+            <p>Account: {`${account.slice(0, 6)}...${account.slice(-4)}`}</p>
+            <p>Network: {SOMNIA_CONFIG.chainName} (Chain ID: {SOMNIA_CONFIG.chainId})</p>
           </div>
 
           <div className="mint-section">
@@ -1845,15 +1863,15 @@ export default function App() {
               type="text" 
               placeholder="Opponent address" 
               id="opponentAddress"
+              className="game-input"
             />
-            <button onClick={() => 
-              startGame(document.getElementById('opponentAddress').value)
-            }>
+            <button 
+              onClick={() => startGame(document.getElementById('opponentAddress').value)}
+              className="game-button"
+            >
               Play Durak
             </button>
           </div>
-
-          {error && <div className="error">{error}</div>}
         </div>
       )}
     </div>
