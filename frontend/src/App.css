@@ -1,1 +1,12 @@
+.network-warning {
+  background: #ffeb3b;
+  padding: 10px;
+  border-radius: 5px;
+  margin: 10px 0;
+  color: #000;
+}
 
+.error {
+  color: #f44336;
+  margin: 10px 0;
+}
