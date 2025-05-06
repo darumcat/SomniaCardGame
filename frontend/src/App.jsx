@@ -64,4 +64,35 @@ function App() {
     try {
       const tx = await nftContract.mint()
       await tx.wait()
-      alert("NFT успе
+      alert("NFT успешно заминчен!")
+    } catch (error) {
+      console.error("Ошибка минта NFT:", error)
+    }
+  }
+
+  const mintUSDCard = async () => {
+    try {
+      const tx = await usdCardContract.mint()
+      await tx.wait()
+      alert("USDCard успешно заминчены!")
+    } catch (error) {
+      console.error("Ошибка минта USDCard:", error)
+    }
+  }
+
+  return (
+    <div className="App">
+      {!account ? (
+        <button onClick={connectWallet}>Connect Wallet</button>
+      ) : (
+        <div>
+          <p>Connected: {account}</p>
+          <button onClick={mintNFT}>Mint NFT</button>
+          <button onClick={mintUSDCard}>Mint USDCard</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default App
