@@ -1,7 +1,8 @@
+// frontend/src/context/Web3Context.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, getContractABI } from '../context/contracts'; // Убедитесь, что путь правильный
-
+import { CONTRACT_ADDRESSES, getContractABI } from '../context/contracts';
+import { cleanMessage } from '../context/filterWords'; // Убедись, что путь правильный
 
 const Web3Context = createContext();
 
@@ -11,16 +12,11 @@ export const Web3Provider = ({ children }) => {
   const [nftBalance, setNftBalance] = useState(0);
   const [contracts, setContracts] = useState({});
 
-  const loadABI = async (path) => {
-    const response = await fetch(path);
-    return await response.json();
-  };
-
   const initContracts = async (signer) => {
     const [cardGameABI, nftABI, usdABI] = await Promise.all([
-      loadABI(`${process.env.PUBLIC_URL}/CardGame.json`),
-      loadABI(`${process.env.PUBLIC_URL}/NFT.json`),
-      loadABI(`${process.env.PUBLIC_URL}/USDCard.json`),
+      getContractABI('game'),
+      getContractABI('nft'),
+      getContractABI('usdcard'),
     ]);
 
     setContracts({
@@ -55,9 +51,9 @@ export const Web3Provider = ({ children }) => {
   }, [account, contracts]);
 
   const handleMessageSend = (message) => {
-    const cleanedMessage = cleanMessage(message); // Применяем фильтрацию
-    // Далее логика отправки сообщения
-    sendMessage(cleanedMessage);
+    const cleanedMessage = cleanMessage(message);
+    // Здесь должна быть функция sendMessage(cleanedMessage)
+    console.log('Отправлено сообщение:', cleanedMessage);
   };
 
   return (
@@ -68,3 +64,4 @@ export const Web3Provider = ({ children }) => {
 };
 
 export const useWeb3 = () => useContext(Web3Context);
+
