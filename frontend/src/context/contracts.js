@@ -24,7 +24,7 @@ export const getContractABI = (contractName) => {
   return basicABI;
 };
 
-// Необязательная проверка адресов при импорте
+// Optional validation of contract addresses on import
 if (typeof window !== 'undefined') {
   Object.values(CONTRACT_ADDRESSES).forEach(addr => {
     if (!/^0x[a-fA-F0-9]{40}$/.test(addr)) {
@@ -32,4 +32,3 @@ if (typeof window !== 'undefined') {
     }
   });
 }
-
