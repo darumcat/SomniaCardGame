@@ -3,9 +3,9 @@ const nftABI = require(`${process.env.PUBLIC_URL}/NFT.json`);
 const usdCardABI = require(`${process.env.PUBLIC_URL}/USDCard.json`);
 
 export const CONTRACT_ADDRESSES = {
-  nft: '0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641',
-  usdcard: '0x14A21748e5E9Da6B0d413256E3ae80ABEBd8CC80',
-  game: '0x566aaC422C630CE3c093CD2C13C5B3EceCe0D512'
+  nft: '0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641', // Адрес контракта NFT
+  usdcard: '0x14A21748e5E9Da6B0d413256E3ae80ABEBd8CC80', // Адрес контракта USDCard
+  game: '0x566aaC422C630CE3c093CD2C13C5B3EceCe0D512' // Адрес контракта CardGame
 };
 
 export const getContractABI = (contractName) => {
@@ -24,7 +24,7 @@ export const getContractABI = (contractName) => {
   return basicABI;
 };
 
-// Optional validation of contract addresses on import
+// Необязательная проверка адресов при импорте
 if (typeof window !== 'undefined') {
   Object.values(CONTRACT_ADDRESSES).forEach(addr => {
     if (!/^0x[a-fA-F0-9]{40}$/.test(addr)) {
