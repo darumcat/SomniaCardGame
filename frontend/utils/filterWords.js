@@ -1,12 +1,11 @@
-import Filter from 'bad-words';
-
+// Фильтрация текста на запрещённые слова
 const filter = new Filter({ placeHolder: '*' });
-filter.addWords(...['плохоеслово', 'другоемат']); // Добавьте свои слова
+filter.addWords('плохоеслово', 'другоемат'); // Добавьте свои слова
 
 export const cleanMessage = (text) => {
   try {
-    return filter.clean(text);
+    return filter.clean(text); // Заменяет запрещённые слова
   } catch {
-    return text; // Возвращаем как есть в случае ошибки
+    return text; // Возвращает текст как есть в случае ошибки
   }
 };
