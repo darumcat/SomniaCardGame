@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, ABI_PATHS } from '../utils/contracts';
+import { CONTRACT_ADDRESSES } from '../utils/contracts';
 
 const Web3Context = createContext();
 
@@ -17,13 +17,13 @@ export const Web3Provider = ({ children }) => {
 
   const initContracts = async (signer) => {
     const [cardGameABI, nftABI, usdABI] = await Promise.all([
-      loadABI(ABI_PATHS.cardGame),
-      loadABI(ABI_PATHS.nft),
-      loadABI(ABI_PATHS.usdcard),
+      loadABI(`${process.env.PUBLIC_URL}/CardGame.json`),
+      loadABI(`${process.env.PUBLIC_URL}/NFT.json`),
+      loadABI(`${process.env.PUBLIC_URL}/USDCard.json`),
     ]);
 
     setContracts({
-      cardGameContract: new ethers.Contract(CONTRACT_ADDRESSES.cardGame, cardGameABI, signer),
+      cardGameContract: new ethers.Contract(CONTRACT_ADDRESSES.game, cardGameABI, signer),
       nftContract: new ethers.Contract(CONTRACT_ADDRESSES.nft, nftABI, signer),
       usdcardContract: new ethers.Contract(CONTRACT_ADDRESSES.usdcard, usdABI, signer),
     });
