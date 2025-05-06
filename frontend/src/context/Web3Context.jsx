@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, ABI_PATHS } from '../utils/contracts';
+import { CONTRACT_ADDRESSES, ABI_PATHS } from './contracts'; // Путь к contracts.js изменен на './contracts'
 
 const Web3Context = createContext();
 
