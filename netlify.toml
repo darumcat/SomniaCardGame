@@ -1,20 +1,15 @@
-[build]
-  command = "cd frontend && npm install --legacy-peer-deps && npm run build"
-  publish = "frontend/dist"
-
 [[headers]]
   for = "/*"
   [headers.values]
     Content-Security-Policy = """
       default-src 'self';
-      script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' 'unsafe-eval' https: blob:;
-      script-src-elem 'self' https: https://cdn.ethers.io;
-      connect-src 'self' https://shannon-explorer.somnia.network/ wss: https://cdn.ethers.io;
-      style-src 'self' 'unsafe-inline';
-      img-src 'self' data: https: blob:;
-      font-src 'self' data:;
+      script-src 'self' https: 'unsafe-inline' 'wasm-unsafe-eval';
+      connect-src 'self' https: wss:;
+      style-src 'self' https: 'unsafe-inline';
+      img-src 'self' https: data: blob:;
+      font-src 'self' https: data:;
+      media-src 'self' https:;
       frame-src 'self' https:;
-      worker-src 'self' blob:;
     """
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
