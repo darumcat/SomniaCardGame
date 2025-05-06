@@ -6,7 +6,8 @@ import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-     <Web3Provider>
-    <App />
+    <Web3Provider>
+      <App />
+    </Web3Provider>
   </React.StrictMode>
 )
