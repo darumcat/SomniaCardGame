@@ -1,110 +1,111 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { ethers } from 'ethers';
-import {
-  isMetaMaskConnected,
-  initEthersProvider,
-  connectWallet,
-  setupListeners
-} from '@/utils/web3';
-import { CONTRACT_ADDRESSES, getContractABI } from '@contracts';
+import { CONTRACT_ADDRESSES, getContractABI } from './contracts';
+
+// Утилиты можно оставить в отдельном файле или перенести сюда
+const isMetaMaskInstalled = () => window.ethereum && window.ethereum.isMetaMask;
 
 const Web3Context = createContext();
 
 export const Web3Provider = ({ children }) => {
-  const [account, setAccount] = useState(null);
-  const [contracts, setContracts] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [state, setState] = useState({
+    account: null,
+    contracts: null,
+    isLoading: true,
+    isMetaMaskInstalled: isMetaMaskInstalled()
+  });
 
   const initContracts = useCallback(async (signer) => {
     try {
-      const [nftABI, usdcardABI] = await Promise.all([
+      const [nftABI, usdcardABI, gameABI] = await Promise.all([
         getContractABI('nft'),
-        getContractABI('usdcard')
+        getContractABI('usdcard'),
+        getContractABI('game')
       ]);
 
-      const nftContract = new ethers.Contract(
-        CONTRACT_ADDRESSES.nft,
-        nftABI,
-        signer
-      );
-      
-      const usdcardContract = new ethers.Contract(
-        CONTRACT_ADDRESSES.usdcard,
-        usdcardABI,
-        signer
-      );
-
-      setContracts({ 
-        nftContract, 
-        usdcardContract,
+      const contracts = {
+        nft: new ethers.Contract(CONTRACT_ADDRESSES.nft, nftABI, signer),
+        usdcard: new ethers.Contract(CONTRACT_ADDRESSES.usdcard, usdcardABI, signer),
+        game: new ethers.Contract(CONTRACT_ADDRESSES.game, gameABI, signer),
         addresses: CONTRACT_ADDRESSES
-      });
+      };
+
+      setState(prev => ({ ...prev, contracts }));
     } catch (error) {
-      console.error("Contract init error:", error);
-      toast.error("Failed to load contracts");
+      console.error("Contract init failed:", error);
+      toast.error("Failed to initialize contracts");
     }
   }, []);
 
-  const handleAccountsChanged = useCallback((accounts) => {
-    setAccount(accounts[0] || null);
-    if (!accounts[0]) {
-      setContracts(null);
+  const connectWallet = useCallback(async () => {
+    if (!state.isMetaMaskInstalled) {
+      toast.error("Please install MetaMask first!");
+      return;
     }
-  }, []);
 
-  const handleChainChanged = useCallback(() => {
-    window.location.reload();
-  }, []);
-
-  const connect = useCallback(async () => {
     try {
-      const { address, signer } = await connectWallet();
-      setAccount(address);
+      const accounts = await window.ethereum.request({ 
+        method: 'eth_requestAccounts' 
+      });
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      
+      setState(prev => ({ ...prev, account: accounts[0] }));
       await initContracts(signer);
-      toast.success("Wallet connected!");
+      toast.success("Wallet connected successfully!");
     } catch (error) {
-      toast.error(`Connection failed: ${error.message}`);
+      console.error("Connection error:", error);
+      toast.error(error.message || "Failed to connect wallet");
     }
-  }, [initContracts]);
+  }, [state.isMetaMaskInstalled, initContracts]);
 
   useEffect(() => {
-    const checkConnection = async () => {
+    if (!state.isMetaMaskInstalled) {
+      setState(prev => ({ ...prev, isLoading: false }));
+      return;
+    }
+
+    const init = async () => {
       try {
-        const isConnected = await isMetaMaskConnected();
-        if (isConnected) {
-          const provider = initEthersProvider();
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (accounts.length > 0) {
+          const provider = new ethers.BrowserProvider(window.ethereum);
           const signer = await provider.getSigner();
-          const address = await signer.getAddress();
-          setAccount(address);
+          setState(prev => ({ ...prev, account: accounts[0] }));
           await initContracts(signer);
         }
       } catch (error) {
-        console.error("Initial connection check failed:", error);
+        console.error("Initialization error:", error);
       } finally {
-        setIsLoading(false);
+        setState(prev => ({ ...prev, isLoading: false }));
       }
     };
 
-    checkConnection();
-    setupListeners({
-      handleAccountsChanged,
-      handleChainChanged
-    });
+    const handleAccountsChanged = (accounts) => {
+      setState(prev => ({
+        ...prev,
+        account: accounts[0] || null,
+        contracts: accounts[0] ? prev.contracts : null
+      }));
+    };
+
+    const handleChainChanged = () => window.location.reload();
+
+    init();
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    window.ethereum.on('chainChanged', handleChainChanged);
 
     return () => {
-      window.ethereum?.removeListener('accountsChanged', handleAccountsChanged);
-      window.ethereum?.removeListener('chainChanged', handleChainChanged);
+      window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      window.ethereum.removeListener('chainChanged', handleChainChanged);
     };
-  }, [handleAccountsChanged, handleChainChanged, initContracts]);
+  }, [initContracts, state.isMetaMaskInstalled]);
 
   return (
-    <Web3Context.Provider value={{ 
-      account, 
-      contracts, 
-      isLoading, 
-      connect,
-      isConnected: !!account
+    <Web3Context.Provider value={{
+      ...state,
+      connect: connectWallet
     }}>
       {children}
     </Web3Context.Provider>
