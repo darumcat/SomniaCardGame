@@ -23,14 +23,7 @@ const CONTRACTS = {
 };
 
 // ABI контрактов (ЗАМЕНИТЕ НА ПОЛНЫЕ ABI ИЗ ВАШИХ ФАЙЛОВ!)
-const NFT_ABI = [
-  {
-    "inputs": [],
-    "name": "mint",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
+const NFT_ABI = 
   [
 	{
 		"inputs": [
