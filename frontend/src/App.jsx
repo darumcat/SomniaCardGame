@@ -135,7 +135,7 @@ export default function App() {
           {error}
           <button onClick={() => setError(null)}>×</button>
        </div>
-</div>
+
       )}
 
       {!account ? (
