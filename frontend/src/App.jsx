@@ -18,35 +18,39 @@ export default function App() {
   const [account, setAccount] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [CardGameABI, setCardGameABI] = useState(null);
-  const [NFTABI, setNFTABI] = useState(null);
-  const [USDCardABI, setUSDCardABI] = useState(null);
+  const [cardGameABI, setCardGameABI] = useState(null);
+  const [nftABI, setNFTABI] = useState(null);
+  const [usdCardABI, setUSDCardABI] = useState(null);
 
-  // Загружаем ABI файлы
-  useEffect(() => {
-const loadABIs = async () => {
-  try {
-    const cardGameRes = await fetch('/CardGame.json');
-    const nftRes = await fetch('/NFT.json');
-    const usdCardRes = await fetch('/USDCard.json');
-    
-    if (!cardGameRes.ok || !nftRes.ok || !usdCardRes.ok) {
-      throw new Error('Ошибка загрузки ABI файлов');
+  // Загрузка ABI файлов
+  const loadABIs = async () => {
+    try {
+      const cardGameRes = await fetch('/CardGame.json');
+      const nftRes = await fetch('/NFT.json');
+      const usdCardRes = await fetch('/USDCard.json');
+
+      if (!cardGameRes.ok || !nftRes.ok || !usdCardRes.ok) {
+        throw new Error('Ошибка загрузки ABI файлов');
+      }
+
+      const cardGameData = await cardGameRes.json();
+      const nftData = await nftRes.json();
+      const usdCardData = await usdCardRes.json();
+
+      setCardGameABI(cardGameData.abi);
+      setNFTABI(nftData.abi);
+      setUSDCardABI(usdCardData.abi);
+    } catch (err) {
+      console.error('Ошибка загрузки ABI:', err);
+      setError('Не удалось загрузить ABI');
     }
+  };
 
-    const cardGameData = await cardGameRes.json();
-    const nftData = await nftRes.json();
-    const usdCardData = await usdCardRes.json();
+  useEffect(() => {
+    loadABIs();
+  }, []);
 
-    setCardGameABI(cardGameData.abi);
-    setNFTABI(nftData.abi);
-    setUSDCardABI(usdCardData.abi);
-  } catch (err) {
-    console.error('Ошибка загрузки ABI:', err);
-    setError('Не удалось загрузить ABI');
-  }
-};
-
+  // Проверка и переключение сети при необходимости
   const ensureCorrectNetwork = async () => {
     if (!window.ethereum) return false;
     try {
@@ -106,7 +110,8 @@ const loadABIs = async () => {
 
       // ✍️ Подписание сообщения
       const message = `Sign in to Somnia Card Game.
-      This signature is required to verify your identity. No funds will be withdrawn from your wallet. Only in-game transactions using internal assets may occur.`;
+
+This signature is required to verify your identity. No funds will be withdrawn from your wallet. Only in-game transactions using internal assets may occur.`;
       await signer.signMessage(message);
 
       setAccount(accounts[0]);
