@@ -7,6 +7,32 @@ const MintSection = () => {
   const [isMintingNFT, setIsMintingNFT] = useState(false);
   const [isMintingUSD, setIsMintingUSD] = useState(false);
 
+  // Универсальная функция для обработки ошибок контракта
+  const parseContractError = (error) => {
+    if (!error) return "Unknown error";
+    
+    // Обработка ошибки из revert
+    if (error.reason) return error.reason;
+    
+    // Обработка ошибки из метамаски
+    if (error.data?.message) {
+      const revertReason = error.data.message.match(/reverted with reason string '(.*?)'/);
+      if (revertReason) return revertReason[1];
+      return error.data.message;
+    }
+    
+    // Обработка обычной ошибки
+    if (error.message) {
+      // Для ошибки "Already minted"
+      if (error.message.includes("Already minted")) {
+        return "You've already minted this item";
+      }
+      return error.message.split('(')[0];
+    }
+    
+    return "Unknown error occurred";
+  };
+
   const mintNFT = async () => {
     if (!account) {
       toast.error("Connect wallet first!");
@@ -23,18 +49,9 @@ const MintSection = () => {
       console.log("NFT Balance:", balance.toString());
       
     } catch (error) {
-      console.error("Mint error:", error);
-      
-      // Обработка конкретной ошибки "Already minted"
-      if (error.message.includes("Already minted") || error.reason?.includes("Already minted")) {
-        toast.warning("You've already minted this NFT!");
-      } else {
-        // Общая обработка других ошибок
-        const errorMsg = error.reason || 
-                        error.data?.message || 
-                        error.message.split("(")[0];
-        toast.error(`Error: ${errorMsg}`);
-      }
+      console.error("NFT Mint error:", error);
+      const errorMsg = parseContractError(error);
+      toast.warning(errorMsg);
     } finally {
       setIsMintingNFT(false);
     }
@@ -52,16 +69,14 @@ const MintSection = () => {
       toast.success("USDC tokens minted!");
       await updateBalances();
     } catch (error) {
-      console.error("Mint USD error:", error);
+      console.error("USDC Mint error:", error);
+      const errorMsg = parseContractError(error);
       
-      // Аналогичная обработка для USDC
-      if (error.message.includes("Already minted") || error.reason?.includes("Already minted")) {
-        toast.warning("You've already minted USDC tokens!");
+      // Специальная обработка для USDCard
+      if (errorMsg.includes("USDCard: Already minted")) {
+        toast.info("You've already minted your USDC tokens");
       } else {
-        const errorMsg = error.reason || 
-                       error.data?.message || 
-                       error.message.split('(')[0];
-        toast.error(`Error: ${errorMsg}`);
+        toast.warning(errorMsg);
       }
     } finally {
       setIsMintingUSD(false);
