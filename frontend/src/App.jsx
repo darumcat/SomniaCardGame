@@ -126,14 +126,16 @@ export default function App() {
   };
 
   return (
-    <div className="App">
+   <div className="App">
+  <div className="content-container">
       <h1>Somnia Card Game</h1>
       
       {error && (
         <div className="error">
           {error}
           <button onClick={() => setError(null)}>×</button>
-        </div>
+       </div>
+</div>
       )}
 
       {!account ? (
