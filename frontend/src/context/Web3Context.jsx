@@ -113,7 +113,7 @@ export const Web3Provider = ({ children }) => {
             return;
           }
 
-          const provider = new ethers.BrowserProvider(window.ethereum);
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
           const signer = await provider.getSigner();
           await initContracts(signer);
 
