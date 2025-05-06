@@ -22,7 +22,7 @@ const MintSection = () => {
   // Проверка статуса минтинга
   useEffect(() => {
     const checkMintStatus = async () => {
-      if (!contracts || !account) return;
+      if (!contracts?.nft || !contracts?.usdcard || !account) return;
       
       try {
         const [nftStatus, usdStatus] = await Promise.all([
@@ -37,6 +37,7 @@ const MintSection = () => {
         }));
       } catch (error) {
         console.error('Error checking mint status:', error);
+        toast.error('Failed to load mint status');
       }
     };
 
@@ -56,6 +57,11 @@ const MintSection = () => {
 
     if (mintState.hasMintedNFT) {
       toast.info('You already minted your NFT');
+      return;
+    }
+
+    if (!contracts?.nft) {
+      toast.error('NFT contract not loaded');
       return;
     }
 
@@ -95,6 +101,11 @@ const MintSection = () => {
 
     if (mintState.hasMintedUSD) {
       toast.info('You already minted USDC tokens');
+      return;
+    }
+
+    if (!contracts?.usdcard) {
+      toast.error('USDCard contract not loaded');
       return;
     }
 
@@ -141,8 +152,11 @@ const MintSection = () => {
           disabled={mintState.isMintingNFT || mintState.hasMintedNFT}
           className={mintState.isMintingNFT ? 'loading' : ''}
         >
-          {mintState.isMintingNFT ? 'Minting...' : 
-           mintState.hasMintedNFT ? 'Already Minted' : 'Mint NFT (1 free)'}
+          {mintState.isMintingNFT 
+            ? 'Minting...' 
+            : mintState.hasMintedNFT 
+              ? 'Already Minted' 
+              : 'Mint NFT (1 free)'}
         </button>
 
         <button
@@ -150,8 +164,11 @@ const MintSection = () => {
           disabled={mintState.isMintingUSD || mintState.hasMintedUSD}
           className={mintState.isMintingUSD ? 'loading' : ''}
         >
-          {mintState.isMintingUSD ? 'Minting...' : 
-           mintState.hasMintedUSD ? 'Already Minted' : 'Mint USDC (10,000 max)'}
+          {mintState.isMintingUSD 
+            ? 'Minting...' 
+            : mintState.hasMintedUSD 
+              ? 'Already Minted' 
+              : 'Mint USDC (10,000 max)'}
         </button>
       </div>
     </div>
