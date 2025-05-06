@@ -1,15 +1,18 @@
+[build]
+  command = "cd frontend && npm install && npm run build"
+  publish = "frontend/dist"
+
 [[headers]]
   for = "/*"
   [headers.values]
     Content-Security-Policy = """
       default-src 'self';
-      script-src 'self' https: 'unsafe-inline' 'wasm-unsafe-eval';
-      connect-src 'self' https: wss:;
-      style-src 'self' https: 'unsafe-inline';
-      img-src 'self' https: data: blob:;
-      font-src 'self' https: data:;
-      media-src 'self' https:;
-      frame-src 'self' https:;
+      script-src 'self' 'wasm-unsafe-eval';
+      connect-src 'self' https://shannon-explorer.somnia.network/ wss:;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self' data:;
+      frame-src 'self';
     """
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
