@@ -11,7 +11,7 @@ const SOMNIA_CONFIG = {
     symbol: 'STT',
     decimals: 18
   },
-  rpcUrls: ['https://rpc.ankr.com/somnia_testnet'],
+  rpcUrls: ['https://dream-rpc.somnia.network/'],
   blockExplorerUrls: ['https://shannon-explorer.somnia.network/']
 };
 
