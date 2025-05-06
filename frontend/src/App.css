@@ -1,11 +1,14 @@
+/* Основные стили */
 .App {
   text-align: center;
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
   font-family: 'Arial', sans-serif;
+  color: #333;
 }
 
+/* Кнопка подключения */
 .connect-button {
   background-color: #4e44ce;
   color: white;
@@ -16,6 +19,7 @@
   cursor: pointer;
   transition: all 0.3s;
   margin: 1rem 0;
+  font-weight: bold;
 }
 
 .connect-button:hover {
@@ -27,6 +31,7 @@
   cursor: not-allowed;
 }
 
+/* Контейнеры */
 .game-container {
   background: #f8f9fa;
   border-radius: 12px;
@@ -36,21 +41,22 @@
 }
 
 .wallet-info {
-  margin-bottom: 2rem;
-  padding: 1rem;
   background: #eef2ff;
   border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .mint-section, .game-section {
-  margin: 2rem 0;
-  padding: 1.5rem;
   background: white;
   border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.mint-section button, .game-section button {
+/* Кнопки действий */
+.mint-section button, .game-button {
   background: #4a6fa5;
   color: white;
   border: none;
@@ -59,35 +65,45 @@
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.3s;
+  font-size: 0.9rem;
 }
 
-.mint-section button:hover, .game-section button:hover {
+.mint-section button:hover, .game-button:hover {
   background: #3a5a80;
 }
 
-.game-section input {
+/* Поля ввода */
+.game-input {
   padding: 10px;
   width: 300px;
   border: 1px solid #ddd;
   border-radius: 6px;
   margin-right: 10px;
+  font-size: 0.9rem;
 }
 
-.error {
+/* Сообщения об ошибках */
+.error-message {
   color: #d32f2f;
-  background: #ffebee;
-  padding: 1rem;
+  background-color: #fde8e8;
+  padding: 12px;
   border-radius: 8px;
-  margin-top: 1rem;
+  margin: 1rem auto;
+  max-width: 500px;
 }
 
+/* Адаптивность */
 @media (max-width: 600px) {
   .App {
     padding: 1rem;
   }
   
-  .game-section input {
+  .game-input {
     width: 100%;
     margin-bottom: 10px;
+  }
+  
+  .mint-section, .game-section {
+    padding: 1rem;
   }
 }
