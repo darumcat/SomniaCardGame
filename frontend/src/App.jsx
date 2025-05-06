@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import './App.css';
 
-// Импортируем ABI контрактов из папки contracts
-import CardGameArtifact from '../contracts/CardGame.json';
-import NFTArtifact from '../contracts/NFT.json';
-import USDCardArtifact from '../contracts/USDCard.json';
+// Импортируем ABI контрактов с помощью require
+const CardGameArtifact = require('../contracts/CardGame.json');
+const NFTArtifact = require('../contracts/NFT.json');
+const USDCardArtifact = require('../contracts/USDCard.json');
 
 const SOMNIA_CONFIG = {
   chainId: '0xC488', // 50312 в HEX
