@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import PVPLobby from './PVPLobby';
 import PVEGame from './PVEGame';
 import ChatRulesModal from './ChatRulesModal';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 const GameLobby = () => {
-  const { nftBalance } = useWeb3();
+  const { nftBalance, account } = useWeb3();
   const [gameType, setGameType] = useState(null);
   const [showRules, setShowRules] = useState(false);
+  const navigate = useNavigate();
 
   const handleGameSelect = (type) => {
     if (nftBalance < 1) {
@@ -17,6 +20,17 @@ const GameLobby = () => {
     if (type === 'PVP') setShowRules(true);
     else setGameType(type);
   };
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (nftBalance < 1) {
+        toast.error("Требуется NFT для игры!");
+        navigate("/"); // Перенаправляем на главную
+      }
+    };
+
+    if (account) checkAccess();
+  }, [account, nftBalance, navigate]);
 
   return (
     <div className="game-lobby">
