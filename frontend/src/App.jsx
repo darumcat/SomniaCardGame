@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
-import { BrowserProvider } from 'ethers';
+import { ethers } from 'ethers';
 import './App.css';
+
+// Импортируем ABI контрактов из папки contracts
+import CardGameArtifact from '../contracts/CardGame.json';
+import NFTArtifact from '../contracts/NFT.json';
+import USDCardArtifact from '../contracts/USDCard.json';
 
 const SOMNIA_CONFIG = {
   chainId: '0xC488', // 50312 в HEX
@@ -14,11 +19,20 @@ const SOMNIA_CONFIG = {
   blockExplorerUrls: ['https://shannon-explorer.somnia.network/'],
 };
 
+// Адреса контрактов
+const CONTRACT_ADDRESSES = {
+  CardGame: '0x566aaC422C630CE3c093CD2C13C5B3EceCe0D512',
+  NFT: '0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641',
+  USDCard: '0x14A21748e5E9Da6B0d413256E3ae80ABEBd8CC80',
+};
+
 export default function App() {
   const [account, setAccount] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [contracts, setContracts] = useState({});
 
+  // Проверка и переключение сети при необходимости
   const ensureCorrectNetwork = async () => {
     if (!window.ethereum) return false;
     try {
@@ -73,15 +87,21 @@ export default function App() {
         throw new Error('No accounts found');
       }
 
-      const provider = new BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
 
-      // ✍️ Подписание сообщения
+      // Подписание сообщения
       const message = `Sign in to Somnia Card Game.
 
 This signature is required to verify your identity. No funds will be withdrawn from your wallet. Only in-game transactions using internal assets may occur.`;
       await signer.signMessage(message);
 
+      // Подключение контрактов
+      const cardGame = new ethers.Contract(CONTRACT_ADDRESSES.CardGame, CardGameArtifact.abi, signer);
+      const nft = new ethers.Contract(CONTRACT_ADDRESSES.NFT, NFTArtifact.abi, signer);
+      const usdCard = new ethers.Contract(CONTRACT_ADDRESSES.USDCard, USDCardArtifact.abi, signer);
+
+      setContracts({ cardGame, nft, usdCard });
       setAccount(accounts[0]);
     } catch (err) {
       console.error('Connection error:', err);
@@ -111,7 +131,7 @@ This signature is required to verify your identity. No funds will be withdrawn f
         )}
 
         {!account ? (
-          <button
+          <button 
             onClick={connectWallet}
             disabled={isLoading}
             className="connect-button"
@@ -120,7 +140,7 @@ This signature is required to verify your identity. No funds will be withdrawn f
           </button>
         ) : (
           <div className="wallet-info">
-            <p>Welcome: {account.slice(0, 6)}...{account.slice(-4)} 🎉</p>
+            <p>Connected: {account.slice(0, 6)}...{account.slice(-4)}</p>
             <p>Network: {SOMNIA_CONFIG.chainName}</p>
           </div>
         )}
