@@ -5,7 +5,7 @@ export const CONTRACT_ADDRESSES = {
 };
 
 export const SOMNIA_CONFIG = {
-  chainId: '0xC488', // 50312 в HEX
+  chainId: '0xC488', // HEX для 50312
   chainName: 'Somnia Testnet',
   nativeCurrency: {
     name: 'Somnia',
