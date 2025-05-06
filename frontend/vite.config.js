@@ -8,14 +8,13 @@ export default defineConfig({
   
   // Плагины
   plugins: [
-    react({
-      // Оптимизации для React 18
-      jsxRuntime: 'automatic',
-      jsxImportSource: '@emotion/react',
-      babel: {
-        plugins: ['@emotion/babel-plugin']
-      }
-    })
+     plugins: [react()],
+  build: {
+    target: 'es2020',
+    minify: 'terser',
+    sourcemap: false
+  }
+})
   ],
   
   // Настройки разрешения модулей
