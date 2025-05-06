@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, ABI_PATHS } from './contracts'; // Путь к contracts.js изменен на './contracts'
+import { CONTRACT_ADDRESSES, getContractABI } from '../context/contracts'; // Убедитесь, что путь правильный
+import { cleanMessage } from '../utils/filterWords'; // Импортируем функцию для фильтрации
 
 const Web3Context = createContext();
 
@@ -53,8 +54,14 @@ export const Web3Provider = ({ children }) => {
     }
   }, [account, contracts]);
 
+  const handleMessageSend = (message) => {
+    const cleanedMessage = cleanMessage(message); // Применяем фильтрацию
+    // Далее логика отправки сообщения
+    sendMessage(cleanedMessage);
+  };
+
   return (
-    <Web3Context.Provider value={{ account, connectWallet, nftBalance, contracts, updateBalances }}>
+    <Web3Context.Provider value={{ account, connectWallet, nftBalance, contracts, updateBalances, handleMessageSend }}>
       {children}
     </Web3Context.Provider>
   );
