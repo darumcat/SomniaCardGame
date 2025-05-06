@@ -22,7 +22,6 @@ const CONTRACTS = {
   CARDGAME: '0x566aaC422C630CE3c093CD2C13C5B3EceCe0D512'
 };
 
-// ABI контрактов (ЗАМЕНИТЕ НА ПОЛНЫЕ ABI ИЗ ВАШИХ ФАЙЛОВ!)
 const NFT_ABI = 
   [
 	{
@@ -638,16 +637,7 @@ const NFT_ABI =
 ];
 
 const USDCARD_ABI = [
-  {
-    "inputs": [
-      {"internalType": "uint256", "name": "amount", "type": "uint256"}
-    ],
-    "name": "mint",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
-  [
+ 
 	{
 		"inputs": [],
 		"stateMutability": "nonpayable",
@@ -1235,17 +1225,7 @@ const USDCARD_ABI = [
 ];
 
 const CARDGAME_ABI = [
-  {
-    "inputs": [
-      {"internalType": "address", "name": "_opponent", "type": "address"},
-      {"internalType": "uint8", "name": "_gameType", "type": "uint8"}
-    ],
-    "name": "startGame",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
-  [
+  
 	{
 		"inputs": [
 			{
