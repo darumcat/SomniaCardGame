@@ -167,18 +167,20 @@ const GameTable = ({ gameId, mode }) => {
       let cardIndex = -1;
 
       if (gameState.tableCards.length === 0) {
-        // Атака - выбираем случайную карту
-        cardIndex = Math.floor(Math.random() * aiHand.length);
+        // Атака - выбираем самую сильную карту
+        cardIndex = aiHand.reduce((bestIndex, card, index) => 
+          CARD_VALUES[card.rank] > CARD_VALUES[aiHand[bestIndex]?.rank] ? index : bestIndex, 0
+        );
         playedCard = aiHand[cardIndex];
       } else {
-        // Защита - стратегия
+        // Защита - выбираем самую подходящую карту
         const lastCard = gameState.tableCards[gameState.tableCards.length - 1];
         const possibleCards = aiHand.filter(card => canDefend(card, lastCard));
-        
+
         if (possibleCards.length > 0) {
-          // Выбираем минимально возможную карту
-          playedCard = possibleCards.reduce((min, card) => 
-            card.value < min.value ? card : min
+          // Защищаемся с самой сильной картой
+          playedCard = possibleCards.reduce((bestCard, card) => 
+            CARD_VALUES[card.rank] > CARD_VALUES[bestCard.rank] ? card : bestCard
           );
           cardIndex = aiHand.findIndex(c => c.id === playedCard.id);
         }
@@ -194,7 +196,7 @@ const GameTable = ({ gameId, mode }) => {
           defendCards: cardIndex !== -1 ? [...prev.defendCards, playedCard] : prev.defendCards
         }));
       } else {
-        // Забираем карты
+        // Забираем карты, если нет защиты
         setGameState(prev => ({
           ...prev,
           opponentHand: [...prev.opponentHand, ...prev.tableCards],
@@ -210,16 +212,11 @@ const GameTable = ({ gameId, mode }) => {
 
   // Проверка конца раунда
   const checkRoundEnd = useCallback(() => {
-    // Если у игрока закончились карты
     if (gameState.playerHand.length === 0 && gameState.tableCards.length === 0) {
       endGame('player');
-    } 
-    // Если у противника закончились карты
-    else if (gameState.opponentHand.length === 0 && gameState.tableCards.length === 0) {
+    } else if (gameState.opponentHand.length === 0 && gameState.tableCards.length === 0) {
       endGame(mode === 'PVE' ? 'ai' : 'opponent');
-    }
-    // Если раунд закончен и нужно добрать карты
-    else if (gameState.tableCards.length === 0 && gameState.deck.length > 0) {
+    } else if (gameState.tableCards.length === 0 && gameState.deck.length > 0) {
       setTimeout(() => dealCards(), 500);
     }
   }, [gameState, mode, dealCards]);
@@ -293,62 +290,65 @@ const GameTable = ({ gameId, mode }) => {
         <p>Осталось карт: {gameState.deck.length}</p>
       </div>
 
-// Карты противника
-<div className="opponent-area">
-  {gameState.opponentHand.map((_, index) => (
-    <div
-      key={`opponent-${index}`}
-      className="card back fade-in"
-      style={{ animationDelay: `${index * 0.1}s` }}
-    >
-      ?
-    </div>
-  ))}
-</div>
+      {/* Карты противника */}
+      <div className="opponent-area">
+        {gameState.opponentHand.map((_, index) => (
+          <div
+            key={`opponent-${index}`}
+            className="card back fade-in"
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            ?
+          </div>
+        ))}
+      </div>
 
-// Игровой стол
-<div className="table-area">
-  {gameState.tableCards.map((card) => (
-    <div
-      key={`table-${card.id}`}
-      className={`card ${card.suit} ${card.suit === gameState.trumpSuit ? 'trump' : ''} fade-in`}
-    >
-      {card.rank}
-    </div>
-  ))}
-</div>
+      {/* Игровой стол */}
+      <div className="table-area">
+        {gameState.tableCards.map((card) => (
+          <div
+            key={`table-${card.id}`}
+            className={`card ${card.suit} ${card.suit === gameState.trumpSuit ? 'trump' : ''} fade-in`}
+          >
+            {card.rank}
+          </div>
+        ))}
+      </div>
 
-// Карты игрока
-<div className="player-area">
-  {gameState.playerHand.map((card, index) => (
-    <div
-      key={`player-${card.id}`}
-      className={`card ${card.suit} ${card.suit === gameState.trumpSuit ? 'trump' : ''} fade-in`}
-      style={{ animationDelay: `${index * 0.1}s` }}
-      onClick={() => playCard(index)}
-    >
-      {card.rank}
-    </div>
-  ))}
-</div>
+      {/* Карты игрока */}
+      <div className="player-area">
+        {gameState.playerHand.map((card, index) => (
+          <div
+            key={`player-${card.id}`}
+            className={`card ${card.suit} ${card.suit === gameState.trumpSuit ? 'trump' : ''} fade-in`}
+            style={{ animationDelay: `${index * 0.1}s` }}
+            onClick={() => playCard(index)}
+          >
+            {card.rank}
+          </div>
+        ))}
+      </div>
 
-// Модальное окно окончания игры
-{gameState.gameOver && (
-  <div className="game-overlay">
-    <div className="game-over-modal">
-      <h3>{gameState.winner === account ? '🎉 Вы выиграли!' : '😢 Вы проиграли'}</h3>
-      <p>{gameState.winner === account 
-        ? 'Отличная игра! Ваш рейтинг увеличен.' 
-        : 'Не расстраивайтесь! Попробуйте еще раз.'}
-      </p>
-      <button 
-        onClick={() => window.location.reload()}
-        className="connect-button"
-      >
-        В главное меню
-      </button>
+      {/* Модальное окно окончания игры */}
+      {gameState.gameOver && (
+        <div className="game-overlay">
+          <div className="game-over-modal">
+            <h3>{gameState.winner === account ? '🎉 Вы выиграли!' : '😢 Вы проиграли'}</h3>
+            <p>{gameState.winner === account 
+              ? 'Отличная игра! Ваш рейтинг увеличен.' 
+              : 'Не расстраивайтесь! Попробуйте еще раз.'}
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="connect-button"
+            >
+              В главное меню
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-)}
-      
+  );
+};
+
 export default GameTable;
