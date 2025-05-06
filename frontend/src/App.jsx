@@ -19,7 +19,6 @@ export default function App() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Проверка и переключение сети при необходимости
   const ensureCorrectNetwork = async () => {
     if (!window.ethereum) return false;
     try {
@@ -77,6 +76,10 @@ export default function App() {
       const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
 
+      // ✍️ Подписание сообщения
+      const message = 'Sign in to Somnia Card Game';
+      await signer.signMessage(message);
+
       setAccount(accounts[0]);
     } catch (err) {
       console.error('Connection error:', err);
@@ -106,7 +109,7 @@ export default function App() {
         )}
 
         {!account ? (
-          <button 
+          <button
             onClick={connectWallet}
             disabled={isLoading}
             className="connect-button"
@@ -115,7 +118,7 @@ export default function App() {
           </button>
         ) : (
           <div className="wallet-info">
-            <p>Connected: {account.slice(0, 6)}...{account.slice(-4)}</p>
+            <p>Welcome: {account.slice(0, 6)}...{account.slice(-4)} 🎉</p>
             <p>Network: {SOMNIA_CONFIG.chainName}</p>
           </div>
         )}
