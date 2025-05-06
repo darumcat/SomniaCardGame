@@ -28,14 +28,16 @@ export const Web3Provider = ({ children }) => {
         getContractABI('usdcard')
       ]);
 
+      // Проверка загрузки ABI
+      if (!nftABI || !usdcardABI) {
+        throw new Error("ABI files not found");
+      }
+
       const contracts = {
         nft: new ethers.Contract(CONTRACT_ADDRESSES.nft, nftABI, signer),
         usdcard: new ethers.Contract(CONTRACT_ADDRESSES.usdcard, usdcardABI, signer),
         addresses: CONTRACT_ADDRESSES
       };
-
-      console.log("NFT contract initialized:", contracts.nft.address);
-      console.log("USDCard contract initialized:", contracts.usdcard.address);
 
       setState(prev => ({ ...prev, contracts, error: null }));
       return contracts;
@@ -55,21 +57,24 @@ export const Web3Provider = ({ children }) => {
     try {
       setState(prev => ({ ...prev, isLoading: true }));
 
+      // Проверка сети
       const isCorrectNetwork = await checkNetwork();
       if (!isCorrectNetwork) {
         const switched = await switchToSomniaNetwork();
         if (!switched) throw new Error('Please switch to Somnia Testnet');
       }
 
+      // Запрос аккаунтов
       const accounts = await window.ethereum.request({ 
         method: 'eth_requestAccounts' 
       });
       
+      // Инициализация провайдера и контрактов
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = await provider.getSigner();
-      
       await initContracts(signer);
 
+      // Обновление состояния
       setState(prev => ({
         ...prev,
         account: accounts[0],
@@ -89,9 +94,7 @@ export const Web3Provider = ({ children }) => {
         ? 'Connection rejected' 
         : error.message);
     }
-  }, [initContracts]); // Закрытие connectWallet
-
-  // Удалена лишняя закрывающая скобка здесь!
+  }, [initContracts]);
 
   useEffect(() => {
     const init = async () => {
@@ -165,7 +168,7 @@ export const Web3Provider = ({ children }) => {
       {children}
     </Web3Context.Provider>
   );
-}; // Закрытие Web3Provider
+};
 
 export const useWeb3 = () => {
   const context = useContext(Web3Context);
