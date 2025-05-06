@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { ethers } from 'ethers';
 import { CONTRACT_ADDRESSES } from '../utils/contracts';
 
@@ -12,36 +12,31 @@ export const Web3Provider = ({ children }) => {
 
   const initContracts = async (provider) => {
     const signer = await provider.getSigner();
-    const nftContract = new ethers.Contract(
-      CONTRACT_ADDRESSES.nft,
-      (await fetch('/NFT.json')).json(),
-      signer
-    );
-    const usdcardContract = new ethers.Contract(
-      CONTRACT_ADDRESSES.usdcard,
-      (await fetch('/USDCard.json')).json(),
-      signer
-    );
-    const gameContract = new ethers.Contract(
-      CONTRACT_ADDRESSES.game,
-      (await fetch('/CardGame.json')).json(),
-      signer
-    );
+
+    const [nftAbi, usdAbi, gameAbi] = await Promise.all([
+      fetch('/NFT.json').then(res => res.json()),
+      fetch('/USDCard.json').then(res => res.json()),
+      fetch('/CardGame.json').then(res => res.json())
+    ]);
+
+    const nftContract = new ethers.Contract(CONTRACT_ADDRESSES.nft, nftAbi, signer);
+    const usdcardContract = new ethers.Contract(CONTRACT_ADDRESSES.usdcard, usdAbi, signer);
+    const gameContract = new ethers.Contract(CONTRACT_ADDRESSES.game, gameAbi, signer);
+
     return { nftContract, usdcardContract, gameContract };
   };
 
   const connectWallet = async () => {
     if (!window.ethereum) throw new Error("Install MetaMask!");
-    
+
     const provider = new ethers.BrowserProvider(window.ethereum);
     const accounts = await provider.send("eth_requestAccounts", []);
     const contracts = await initContracts(provider);
-    
+
     setAccount(accounts[0]);
     setContracts(contracts);
     updateBalances(contracts, accounts[0]);
-    
-    // Setup listeners
+
     window.ethereum.on('accountsChanged', () => window.location.reload());
     window.ethereum.on('chainChanged', () => window.location.reload());
   };
@@ -52,8 +47,8 @@ export const Web3Provider = ({ children }) => {
   };
 
   return (
-    <Web3Context.Provider value={{ 
-      account, 
+    <Web3Context.Provider value={{
+      account,
       contracts,
       nftBalance,
       usdBalance,
