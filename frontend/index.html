@@ -4,8 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Somnia Card Game</title>
-  <!-- Подключаем Ethers.js через CDN -->
-  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+ <script type="module">
+  import { ethers } from 'ethers';
+  window.ethers = ethers;
+</script>
+  
 </head>
 <body>
   <div id="root"></div>
