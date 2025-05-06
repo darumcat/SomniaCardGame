@@ -7,14 +7,14 @@
   [headers.values]
     Content-Security-Policy = """
       default-src 'self';
-      script-src 'self' 'unsafe-eval' https: blob:;
+      script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' 'unsafe-eval' https: blob:;
+      script-src-elem 'self' https: https://cdn.ethers.io;
       connect-src 'self' https://shannon-explorer.somnia.network/ wss: https://cdn.ethers.io;
       style-src 'self' 'unsafe-inline';
       img-src 'self' data: https: blob:;
       font-src 'self' data:;
       frame-src 'self' https:;
       worker-src 'self' blob:;
-      script-src-elem 'self' https://cdn.ethers.io;
     """
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
