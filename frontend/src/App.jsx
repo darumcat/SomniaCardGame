@@ -2,11 +2,6 @@ import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import './App.css';
 
-// Импортируем ABI контрактов с помощью require
-const CardGameArtifact = require('../contracts/CardGame.json');
-const NFTArtifact = require('../contracts/NFT.json');
-const USDCardArtifact = require('../contracts/USDCard.json');
-
 const SOMNIA_CONFIG = {
   chainId: '0xC488', // 50312 в HEX
   chainName: 'Somnia Testnet',
@@ -19,7 +14,6 @@ const SOMNIA_CONFIG = {
   blockExplorerUrls: ['https://shannon-explorer.somnia.network/'],
 };
 
-// Адреса контрактов
 const CONTRACT_ADDRESSES = {
   CardGame: '0x566aaC422C630CE3c093CD2C13C5B3EceCe0D512',
   NFT: '0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641',
@@ -32,7 +26,6 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [contracts, setContracts] = useState({});
 
-  // Проверка и переключение сети при необходимости
   const ensureCorrectNetwork = async () => {
     if (!window.ethereum) return false;
     try {
@@ -95,6 +88,13 @@ export default function App() {
 
 This signature is required to verify your identity. No funds will be withdrawn from your wallet. Only in-game transactions using internal assets may occur.`;
       await signer.signMessage(message);
+
+      // Динамическая загрузка ABI контракта
+      const [CardGameArtifact, NFTArtifact, USDCardArtifact] = await Promise.all([
+        import('../contracts/CardGame.json'),
+        import('../contracts/NFT.json'),
+        import('../contracts/USDCard.json'),
+      ]);
 
       // Подключение контрактов
       const cardGame = new ethers.Contract(CONTRACT_ADDRESSES.CardGame, CardGameArtifact.abi, signer);
