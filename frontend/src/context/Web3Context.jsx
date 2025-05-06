@@ -34,7 +34,6 @@ export const Web3Provider = ({ children }) => {
         addresses: CONTRACT_ADDRESSES
       };
 
-      // Диагностика контрактов (перенесено из useEffect)
       console.log("NFT contract initialized:", contracts.nft.address);
       console.log("USDCard contract initialized:", contracts.usdcard.address);
 
@@ -66,7 +65,7 @@ export const Web3Provider = ({ children }) => {
         method: 'eth_requestAccounts' 
       });
       
-      const provider = new ethers.providers.Web3Provider(window.ethereum); // Исправлено на providers.Web3Provider
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = await provider.getSigner();
       
       await initContracts(signer);
@@ -90,9 +89,9 @@ export const Web3Provider = ({ children }) => {
         ? 'Connection rejected' 
         : error.message);
     }
-  }, [initContracts]);
+  }, [initContracts]); // Закрытие connectWallet
 
-};
+  // Удалена лишняя закрывающая скобка здесь!
 
   useEffect(() => {
     const init = async () => {
@@ -166,7 +165,7 @@ export const Web3Provider = ({ children }) => {
       {children}
     </Web3Context.Provider>
   );
-};
+}; // Закрытие Web3Provider
 
 export const useWeb3 = () => {
   const context = useContext(Web3Context);
