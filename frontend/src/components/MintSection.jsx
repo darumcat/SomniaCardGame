@@ -15,11 +15,17 @@ const MintSection = () => {
     setIsMintingNFT(true);
     try {
       const tx = await contracts.nftContract.mint();
-      await tx.wait();
-      toast.success("NFT minted successfully!");
-      await updateBalances();
+      await tx.wait(); // Ждём подтверждения транзакции
+      toast.success("NFT successfully minted!");
+      await updateBalances(); // Обновляем балансы
+
+      // Проверяем баланс NFT
+      const balance = await contracts.nftContract.balanceOf(account);
+      console.log("NFT Balance:", balance.toString());
+      
     } catch (error) {
-      toast.error(`Error: ${error.message.split('(')[0]}`);
+      console.error("Mint error:", error);
+      toast.error(`Error: ${error.reason || error.message.split("(")[0]}`);
     } finally {
       setIsMintingNFT(false);
     }
