@@ -83,3 +83,35 @@
 .content-container {
   animation: fadeIn 0.6s ease-out;
 }
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tabs button {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.tabs button.active {
+  background: rgba(255, 255, 255, 0.3);
+  font-weight: bold;
+}
+
+.game-container {
+  margin-top: 20px;
+}
+
+.wallet-info {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
