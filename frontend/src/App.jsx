@@ -7,7 +7,7 @@ const SOMNIA_CONFIG = {
   chainName: 'Somnia Testnet',
   nativeCurrency: {
     name: 'Somnia',
-    symbol: 'STT', 
+    symbol: 'STT',
     decimals: 18
   },
   rpcUrls: ['https://rpc.somnia.network/'], // Новый RPC endpoint
@@ -24,7 +24,6 @@ const switchToSomniaNetwork = async () => {
     return true;
   } catch (err) {
     console.error('Network switch error:', err);
-    setError('Failed to switch to Somnia network');
     return false;
   }
 };
@@ -86,7 +85,7 @@ export default function App() {
 
   const setupProvider = async (account) => {
     try {
-      const browserProvider = new ethers.BrowserProvider(window.ethereum);
+      const browserProvider = new ethers.Web3Provider(window.ethereum);
       setProvider(browserProvider);
       setSigner(await browserProvider.getSigner());
       setAccount(account);
@@ -97,73 +96,47 @@ export default function App() {
     }
   };
 
-const connectWallet = async () => {
-  if (!window.ethereum) {
-    setError('Please install MetaMask!');
-    return;
-  }
-
-  try {
-    // 1. Подключаем аккаунт
-    const accounts = await window.ethereum.request({ 
-      method: 'eth_requestAccounts' 
-    }).catch(err => {
-      if (err.code === 4001) {
-        setError('Connection rejected by user');
-        return null;
-      }
-      throw err;
-    });
-
-    if (!accounts) return;
-
-    // 2. Проверяем сеть
-    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-    
-    if (chainId !== SOMNIA_CONFIG.chainId) {
-      const switched = await switchToSomniaNetwork();
-      if (!switched) return;
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      setError('Please install MetaMask!');
+      return;
     }
 
-    // 3. Инициализируем провайдер
-    await setupProvider(accounts[0]);
-    
-  } catch (err) {
-    setError(err.message || 'Connection failed');
-    console.error('Wallet connection error:', err);
-  }
-};
-      
-      // Проверка сети
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      if (chainId !== SOMNIA_CONFIG.chainId) {
-        try {
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [SOMNIA_CONFIG]
-          });
-        } catch (err) {
-          setError('Failed to switch network');
-          console.error('Network switch error:', err);
+    try {
+      // 1. Подключаем аккаунт
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts'
+      }).catch(err => {
+        if (err.code === 4001) {
+          setError('Connection rejected by user');
+          return null;
         }
+        throw err;
+      });
+
+      if (!accounts) return;
+
+      // 2. Проверяем сеть
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+
+      if (chainId !== SOMNIA_CONFIG.chainId) {
+        const switched = await switchToSomniaNetwork();
+        if (!switched) return;
       }
+
+      // 3. Инициализируем провайдер
+      await setupProvider(accounts[0]);
+
     } catch (err) {
       setError(err.message || 'Connection failed');
       console.error('Wallet connection error:', err);
     }
   };
 
-{account && (
-  <div className="network-warning">
-    <p>Current network: {SOMNIA_CONFIG.chainName}</p>
-    <p>Symbol: {SOMNIA_CONFIG.nativeCurrency.symbol}</p>
-  </div>
-)}
-
   return (
     <div className="App">
       <h1>Somnia Card Game</h1>
-      
+
       {error && <div className="error">{error}</div>}
 
       {!account ? (
@@ -172,7 +145,10 @@ const connectWallet = async () => {
         <div className="wallet-info">
           <p>Connected: {account}</p>
           <p>Network: Somnia Testnet</p>
-          {/* Добавьте здесь компоненты для работы с контрактами */}
+          <div className="network-warning">
+            <p>Current network: {SOMNIA_CONFIG.chainName}</p>
+            <p>Symbol: {SOMNIA_CONFIG.nativeCurrency.symbol}</p>
+          </div>
         </div>
       )}
     </div>
