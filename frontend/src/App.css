@@ -1,4 +1,4 @@
-/* Основной градиентный фон */
+/* Основные стили */
 .App {
   text-align: center;
   min-height: 100vh;
@@ -8,7 +8,6 @@
   color: white;
 }
 
-/* Контейнер контента */
 .content-container {
   max-width: 800px;
   margin: 0 auto;
@@ -30,7 +29,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .error button {
@@ -39,11 +37,6 @@
   color: #d32f2f;
   font-size: 1.2rem;
   cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.error button:hover {
-  transform: scale(1.1);
 }
 
 /* Кнопки */
@@ -56,34 +49,13 @@
   font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
   box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.connect-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(45deg, #00D4FF 0%, #FF0D6E 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: -1;
-  border-radius: 50px;
 }
 
 .connect-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
-}
-
-.connect-button:hover::before {
-  opacity: 1;
 }
 
 .connect-button:disabled {
@@ -100,23 +72,6 @@
   border-radius: 15px;
   margin-top: 2rem;
   backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* Дополнительные элементы */
-h1 {
-  font-size: 2.5rem;
-  margin-bottom: 1.5rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  background: linear-gradient(90deg, #FFFFFF 0%, #E0E0E0 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-p {
-  margin: 0.5rem 0;
-  font-size: 1.1rem;
 }
 
 /* Анимации */
@@ -127,19 +82,4 @@ p {
 
 .content-container {
   animation: fadeIn 0.6s ease-out;
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-  .App {
-    padding: 1rem;
-  }
-  
-  .content-container {
-    padding: 1.5rem;
-  }
-  
-  h1 {
-    font-size: 2rem;
-  }
 }
