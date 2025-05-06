@@ -4,6 +4,18 @@ export const CONTRACT_ADDRESSES = {
   game: import.meta.env.VITE_GAME_ADDRESS || '0x566aaC422C630CE3c093CD2C13C5B3EceCe0D512',
 };
 
+export const SOMNIA_CONFIG = {
+  chainId: '0xC488', // 50312 в HEX
+  chainName: 'Somnia Testnet',
+  nativeCurrency: {
+    name: 'Somnia',
+    symbol: 'STT',
+    decimals: 18,
+  },
+  rpcUrls: ['https://dream-rpc.somnia.network/'],
+  blockExplorerUrls: ['https://shannon-explorer.somnia.network/'],
+};
+
 export const getContractABI = async (contractName) => {
   const abiFiles = {
     nft: '/NFT.json',
@@ -14,47 +26,70 @@ export const getContractABI = async (contractName) => {
   try {
     const response = await fetch(abiFiles[contractName]);
     if (!response.ok) throw new Error(`Failed to load ${contractName} ABI`);
+    
     const data = await response.json();
-    return data.abi || data; // Поддержка разных форматов ABI
+    const abi = data.abi || data;
+    
+    if (!Array.isArray(abi)) throw new Error('Invalid ABI format');
+    if (abi.length === 0) throw new Error('Empty ABI');
+    
+    return abi;
   } catch (error) {
     console.error(`Error loading ${contractName} ABI:`, error);
     return getFallbackABI(contractName);
   }
 };
 
-// Резервные ABI на случай проблем с загрузкой
 const getFallbackABI = (contractName) => {
   const baseABI = [
     "function balanceOf(address) view returns (uint256)",
     "function mint()",
-    "function transfer(address, uint256) returns (bool)",
+    "function hasMinted(address) view returns (bool)",
     "event Transfer(address indexed from, address indexed to, uint256 value)"
   ];
 
-  const nftABI = [
-    ...baseABI,
-    "function hasMinted(address) view returns (bool)",
-    "function ownerOf(uint256) view returns (address)",
-    "function tokenURI(uint256) view returns (string)"
-  ];
+  const extendedABI = {
+    nft: [
+      ...baseABI,
+      "function ownerOf(uint256) view returns (address)",
+      "function tokenURI(uint256) view returns (string)"
+    ],
+    usdcard: [
+      ...baseABI,
+      "function approve(address, uint256) returns (bool)",
+      "function transferFrom(address, address, uint256) returns (bool)"
+    ],
+    game: [
+      "function startGame(address, uint8)",
+      "function sendMessage(uint256, string)",
+      "event GameStarted(uint256, address, address, uint8)"
+    ]
+  };
 
-  const usdcardABI = [
-    ...baseABI,
-    "function hasMinted(address) view returns (bool)",
-    "function approve(address, uint256) returns (bool)",
-    "function transferFrom(address, address, uint256) returns (bool)"
-  ];
+  return extendedABI[contractName] || baseABI;
+};
 
-  const gameABI = [
-    "function startGame(address, uint8)",
-    "function sendMessage(uint256, string)",
-    "event GameStarted(uint256, address, address, uint8)"
-  ];
+export const checkNetwork = async () => {
+  if (!window.ethereum) return false;
+  
+  try {
+    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+    return chainId === SOMNIA_CONFIG.chainId;
+  } catch (error) {
+    console.error('Network check failed:', error);
+    return false;
+  }
+};
 
-  switch(contractName) {
-    case 'nft': return nftABI;
-    case 'usdcard': return usdcardABI;
-    case 'game': return gameABI;
-    default: return baseABI;
+export const switchToSomniaNetwork = async () => {
+  try {
+    await window.ethereum.request({
+      method: 'wallet_addEthereumChain',
+      params: [SOMNIA_CONFIG]
+    });
+    return true;
+  } catch (error) {
+    console.error('Failed to switch network:', error);
+    return false;
   }
 };
