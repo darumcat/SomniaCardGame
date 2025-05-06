@@ -77,7 +77,9 @@ export default function App() {
       const signer = await provider.getSigner();
 
       // ✍️ Подписание сообщения
-      const message = 'Sign in to Somnia Card Game';
+      const message = `Sign in to Somnia Card Game.
+
+This signature is required to verify your identity. No funds will be withdrawn from your wallet. Only in-game transactions using internal assets may occur.`;
       await signer.signMessage(message);
 
       setAccount(accounts[0]);
