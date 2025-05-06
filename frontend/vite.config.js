@@ -7,8 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@utils': path.resolve(__dirname, './src/utils'),
-      '@context': path.resolve(__dirname, './src/context')
+      '@contracts': path.resolve(__dirname, './src/context/contracts.js')
     }
   },
   build: {
