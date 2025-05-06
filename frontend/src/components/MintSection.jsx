@@ -1,95 +1,69 @@
-import { useState } from 'react'
-import { toast } from 'react-toastify'
-import { useWeb3 } from '../context/Web3Context'
+import { useState } from 'react';
+import { toast } from 'react-toastify';
+import { useWeb3 } from '../context/Web3Context';
 
-const MintSection = ({ onMintSuccess }) => {
-  const { account, contracts } = useWeb3()
-  const [isMintingNFT, setIsMintingNFT] = useState(false)
-  const [isMintingUSDC, setIsMintingUSDC] = useState(false)
+const MintSection = () => {
+  const { account, contracts, updateBalances } = useWeb3();
+  const [isMintingNFT, setIsMintingNFT] = useState(false);
+  const [isMintingUSD, setIsMintingUSD] = useState(false);
 
   const mintNFT = async () => {
-    if (!account || !contracts?.nftContract) {
-      toast.error("Кошелек не подключен")
-      return
+    if (!account) {
+      toast.error("Connect wallet first!");
+      return;
     }
-
+    setIsMintingNFT(true);
     try {
-      setIsMintingNFT(true)
-      const tx = await contracts.nftContract.mint()
-      await tx.wait()
-      
-      toast.success("NFT успешно заминтирован!")
-      if (onMintSuccess) onMintSuccess('nft')
-      
-      // Проверяем баланс NFT после минта
-      const balance = await contracts.nftContract.balanceOf(account)
-      console.log("Текущий баланс NFT:", balance.toString())
-      
+      const tx = await contracts.nftContract.mint();
+      await tx.wait();
+      toast.success("NFT minted successfully!");
+      await updateBalances();
     } catch (error) {
-      const errorMsg = error.reason || error.message.split('(')[0]
-      toast.error(`Ошибка минта NFT: ${errorMsg}`)
+      toast.error(`Error: ${error.message.split('(')[0]}`);
     } finally {
-      setIsMintingNFT(false)
+      setIsMintingNFT(false);
     }
-  }
+  };
 
-  const mintUSDCard = async () => {
-    if (!account || !contracts?.usdcardContract) {
-      toast.error("Кошелек не подключен")
-      return
+  const mintUSD = async () => {
+    if (!account) {
+      toast.error("Connect wallet first!");
+      return;
     }
-
+    setIsMintingUSD(true);
     try {
-      setIsMintingUSDC(true)
-      const tx = await contracts.usdcardContract.mint()
-      await tx.wait()
-      
-      toast.success("USDCard успешно получены!")
-      if (onMintSuccess) onMintSuccess('usdcard')
-      
-      // Проверяем баланс после минта
-      const balance = await contracts.usdcardContract.balanceOf(account)
-      console.log("Текущий баланс USDCard:", balance.toString())
-      
+      const tx = await contracts.usdcardContract.mint();
+      await tx.wait();
+      toast.success("USDC tokens minted!");
+      await updateBalances();
     } catch (error) {
-      const errorMsg = error.reason || error.message.split('(')[0]
-      toast.error(`Ошибка получения USDCard: ${errorMsg}`)
+      toast.error(`Error: ${error.message.split('(')[0]}`);
     } finally {
-      setIsMintingUSDC(false)
+      setIsMintingUSD(false);
     }
-  }
+  };
 
   return (
     <div className="mint-section">
-      <h2>Получите доступ к игре</h2>
-      
+      <h2>Get Game Access</h2>
       <div className="mint-buttons">
         <button 
           onClick={mintNFT} 
           disabled={isMintingNFT}
           className={isMintingNFT ? 'loading' : ''}
         >
-          {isMintingNFT ? 'Идет минт...' : 'Mint NFT (1 шт)'}
+          {isMintingNFT ? 'Minting...' : 'Mint NFT (1 free)'}
         </button>
-        
         <button 
-          onClick={mintUSDCard} 
-          disabled={isMintingUSDC}
-          className={isMintingUSDC ? 'loading' : ''}
+          onClick={mintUSD} 
+          disabled={isMintingUSD}
+          className={isMintingUSD ? 'loading' : ''}
         >
-          {isMintingUSDC ? 'Идет минт...' : 'Получить USDCard (10000)'}
+          {isMintingUSD ? 'Minting...' : 'Mint USDC (10,000 max)'}
         </button>
-      </div>
-      
-      <div className="mint-info">
-        <p>Для игры требуется:</p>
-        <ul>
-          <li>1 NFT (пропуск в игру)</li>
-          <li>Минимум 10 USDCard для ставок</li>
-        </ul>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default MintSection
+export default MintSection;
