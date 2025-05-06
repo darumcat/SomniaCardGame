@@ -1,60 +1,60 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES } from '../utils/contracts';
+import { CONTRACT_ADDRESSES, ABI_PATHS } from '../utils/contracts';
 
 const Web3Context = createContext();
 
 export const Web3Provider = ({ children }) => {
   const [account, setAccount] = useState(null);
-  const [contracts, setContracts] = useState(null);
+  const [provider, setProvider] = useState(null);
   const [nftBalance, setNftBalance] = useState(0);
-  const [usdBalance, setUsdBalance] = useState(0);
+  const [contracts, setContracts] = useState({});
 
-  const initContracts = async (provider) => {
-    const signer = await provider.getSigner();
+  const loadABI = async (path) => {
+    const response = await fetch(path);
+    return await response.json();
+  };
 
-    const [nftAbi, usdAbi, gameAbi] = await Promise.all([
-      fetch('/NFT.json').then(res => res.json()),
-      fetch('/USDCard.json').then(res => res.json()),
-      fetch('/CardGame.json').then(res => res.json())
+  const initContracts = async (signer) => {
+    const [cardGameABI, nftABI, usdABI] = await Promise.all([
+      loadABI(ABI_PATHS.cardGame),
+      loadABI(ABI_PATHS.nft),
+      loadABI(ABI_PATHS.usdcard),
     ]);
 
-    const nftContract = new ethers.Contract(CONTRACT_ADDRESSES.nft, nftAbi, signer);
-    const usdcardContract = new ethers.Contract(CONTRACT_ADDRESSES.usdcard, usdAbi, signer);
-    const gameContract = new ethers.Contract(CONTRACT_ADDRESSES.game, gameAbi, signer);
-
-    return { nftContract, usdcardContract, gameContract };
+    setContracts({
+      cardGameContract: new ethers.Contract(CONTRACT_ADDRESSES.cardGame, cardGameABI, signer),
+      nftContract: new ethers.Contract(CONTRACT_ADDRESSES.nft, nftABI, signer),
+      usdcardContract: new ethers.Contract(CONTRACT_ADDRESSES.usdcard, usdABI, signer),
+    });
   };
 
   const connectWallet = async () => {
-    if (!window.ethereum) throw new Error("Install MetaMask!");
+    if (!window.ethereum) return;
 
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const accounts = await provider.send("eth_requestAccounts", []);
-    const contracts = await initContracts(provider);
+    const newProvider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await newProvider.getSigner();
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
 
+    setProvider(newProvider);
     setAccount(accounts[0]);
-    setContracts(contracts);
-    updateBalances(contracts, accounts[0]);
-
-    window.ethereum.on('accountsChanged', () => window.location.reload());
-    window.ethereum.on('chainChanged', () => window.location.reload());
+    await initContracts(signer);
   };
 
-  const updateBalances = async (contracts, account) => {
-    setNftBalance(await contracts.nftContract.balanceOf(account));
-    setUsdBalance(await contracts.usdcardContract.balanceOf(account));
+  const updateBalances = async () => {
+    if (!contracts.nftContract || !account) return;
+    const balance = await contracts.nftContract.balanceOf(account);
+    setNftBalance(Number(balance));
   };
+
+  useEffect(() => {
+    if (account && contracts.nftContract) {
+      updateBalances();
+    }
+  }, [account, contracts]);
 
   return (
-    <Web3Context.Provider value={{
-      account,
-      contracts,
-      nftBalance,
-      usdBalance,
-      connectWallet,
-      updateBalances
-    }}>
+    <Web3Context.Provider value={{ account, connectWallet, nftBalance, contracts, updateBalances }}>
       {children}
     </Web3Context.Provider>
   );
