@@ -9,13 +9,16 @@
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --fix"
   },
-  "dependencies": {
-    "ethers": "^6.11.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-toastify": "^9.1.3",
-    "bad-words": "^3.0.4"
-  },
+  
+"dependencies": {
+  "ethers": "^6.11.1",
+  "react": "^18.2.0",
+  "react-dom": "^18.2.0",
+  "react-toastify": "^9.1.3",
+  "bad-words": "^3.0.4",
+  "react-router-dom": "^6.0.0"
+  
+}
   "devDependencies": {
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
