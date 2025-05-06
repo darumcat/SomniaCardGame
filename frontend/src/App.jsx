@@ -633,7 +633,6 @@ const NFT_ABI =
 		"stateMutability": "view",
 		"type": "function"
 	}
-]
 ];
 
 const USDCARD_ABI = [
@@ -1221,7 +1220,6 @@ const USDCARD_ABI = [
 		"stateMutability": "view",
 		"type": "function"
 	}
-]
 ];
 
 const CARDGAME_ABI = [
@@ -1731,7 +1729,6 @@ const CARDGAME_ABI = [
 		"stateMutability": "view",
 		"type": "function"
 	}
-]
 ];
 
 export default function App() {
