@@ -1,6 +1,8 @@
 # SomniaCardGame
 Fool Card Game for Somnia testnet
 
+The project itself is a Fool Card Game with using Somnia testnet tokens and NFT.
+project structure.
 SomniaCardGame/
 ├── frontend/
 │   ├── public/
