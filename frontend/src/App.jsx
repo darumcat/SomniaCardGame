@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import './App.css';
 
-// Конфигурация сети Somnia Testnet (Chain ID 50312)
 const SOMNIA_CONFIG = {
-  chainId: '0xC488', // 50312 в HEX
+  chainId: '0xC488',
   chainName: 'Somnia Testnet',
   nativeCurrency: {
     name: 'Somnia',
@@ -15,14 +14,12 @@ const SOMNIA_CONFIG = {
   blockExplorerUrls: ['https://shannon-explorer.somnia.network/']
 };
 
-// Адреса контрактов
 const CONTRACTS = {
   NFT: '0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641',
   USDCARD: '0x14A21748e5E9Da6B0d413256E3ae80ABEBd8CC80',
   CARDGAME: '0x566aaC422C630CE3c093CD2C13C5B3EceCe0D512'
 };
 
-// ABI контрактов (ЗАМЕНИТЕ НА ПОЛНЫЕ ABI ИЗ ВАШИХ ФАЙЛОВ!)
 const NFT_ABI = [
 	{
 		"inputs": [
@@ -1732,96 +1729,73 @@ const CARDGAME_ABI = [
 export default function App() {
   const [account, setAccount] = useState(null);
   const [provider, setProvider] = useState(null);
-  const [signer, setSigner] = useState(null);
-  const [nftContract, setNftContract] = useState(null);
-  const [usdCardContract, setUsdCardContract] = useState(null);
-  const [cardGameContract, setCardGameContract] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Инициализация контрактов
-  useEffect(() => {
-    if (signer) {
-      setNftContract(new ethers.Contract(CONTRACTS.NFT, NFT_ABI, signer));
-      setUsdCardContract(new ethers.Contract(CONTRACTS.USDCARD, USDCARD_ABI, signer));
-      setCardGameContract(new ethers.Contract(CONTRACTS.CARDGAME, CARDGAME_ABI, signer));
-    }
-  }, [signer]);
-
-  const connectWallet = async () => {
-    if (!window.ethereum) {
-      setError('Please install MetaMask!');
-      return;
-    }
-
-    setIsLoading(true);
+  // Безопасная инициализация провайдера
+  const initProvider = async () => {
     try {
-      // 1. Подключаем аккаунт
+      if (!window.ethereum) throw new Error('MetaMask not installed');
+      
+      // Проверяем поддержку ethers.BrowserProvider
+      if (!ethers.BrowserProvider) {
+        throw new Error('Incompatible ethers version');
+      }
+
+      const newProvider = new ethers.BrowserProvider(window.ethereum);
+      setProvider(newProvider);
+      return newProvider;
+    } catch (err) {
+      console.error('Provider init error:', err);
+      setError(`Provider error: ${err.message}`);
+      return null;
+    }
+  };
+
+  // Подключение кошелька
+  const connectWallet = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // 1. Инициализация провайдера
+      const currentProvider = await initProvider();
+      if (!currentProvider) return;
+
+      // 2. Запрос аккаунтов
       const accounts = await window.ethereum.request({ 
         method: 'eth_requestAccounts' 
       }).catch(err => {
-        if (err.code === 4001) {
-          setError('Connection rejected by user');
-          return null;
-        }
+        if (err.code === 4001) throw new Error('Connection rejected by user');
         throw err;
       });
 
-      if (!accounts) return;
-
-      // 2. Проверяем сеть
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      
-      if (chainId !== SOMNIA_CONFIG.chainId) {
-        await window.ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [SOMNIA_CONFIG]
-        });
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No accounts found');
       }
 
-      // 3. Инициализируем провайдер
-      const browserProvider = new ethers.BrowserProvider(window.ethereum);
-      setProvider(browserProvider);
-      setSigner(await browserProvider.getSigner());
+      // 3. Проверка сети
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      if (chainId !== SOMNIA_CONFIG.chainId) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [SOMNIA_CONFIG]
+          });
+        } catch (err) {
+          throw new Error(`Failed to switch network: ${err.message}`);
+        }
+      }
+
+      // 4. Получение подписи
+      const signer = await currentProvider.getSigner();
       setAccount(accounts[0]);
-      setError(null);
+      
     } catch (err) {
-      setError(err.message || 'Connection failed');
-      console.error('Wallet connection error:', err);
+      console.error('Connection error:', err);
+      setError(err.message);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Функции минтинга
-  const mintNFT = async () => {
-    try {
-      const tx = await nftContract.mint();
-      await tx.wait();
-      alert('NFT minted successfully!');
-    } catch (err) {
-      setError('NFT mint failed: ' + err.message);
-    }
-  };
-
-  const mintUSDCard = async (amount = 100) => {
-    try {
-      const tx = await usdCardContract.mint(amount);
-      await tx.wait();
-      alert(`${amount} USDCard tokens minted!`);
-    } catch (err) {
-      setError('USDCard mint failed: ' + err.message);
-    }
-  };
-
-  // Игровые функции
-  const startGame = async (opponentAddress) => {
-    try {
-      const tx = await cardGameContract.startGame(opponentAddress, 0);
-      await tx.wait();
-      alert('Game started successfully!');
-    } catch (err) {
-      setError('Game start failed: ' + err.message);
     }
   };
 
@@ -1830,48 +1804,23 @@ export default function App() {
       <h1>Somnia Card Game</h1>
       
       {error && (
-        <div className="error-message">
+        <div className="error">
           {error}
+          <button onClick={() => setError(null)}>×</button>
         </div>
       )}
 
       {!account ? (
         <button 
-          className="connect-button"
           onClick={connectWallet}
           disabled={isLoading}
         >
           {isLoading ? 'Connecting...' : 'Connect MetaMask'}
         </button>
       ) : (
-        <div className="game-container">
-          <div className="wallet-info">
-            <h2>Wallet Connected</h2>
-            <p>Account: {`${account.slice(0, 6)}...${account.slice(-4)}`}</p>
-            <p>Network: {SOMNIA_CONFIG.chainName} (Chain ID: {SOMNIA_CONFIG.chainId})</p>
-          </div>
-
-          <div className="mint-section">
-            <h3>Get Started</h3>
-            <button onClick={mintNFT}>Mint Free NFT</button>
-            <button onClick={() => mintUSDCard(100)}>Mint 100 USDCard</button>
-          </div>
-
-          <div className="game-section">
-            <h3>Start Game</h3>
-            <input 
-              type="text" 
-              placeholder="Opponent address" 
-              id="opponentAddress"
-              className="game-input"
-            />
-            <button 
-              onClick={() => startGame(document.getElementById('opponentAddress').value)}
-              className="game-button"
-            >
-              Play Durak
-            </button>
-          </div>
+        <div>
+          <p>Connected: {account}</p>
+          <p>Network: Somnia Testnet</p>
         </div>
       )}
     </div>
