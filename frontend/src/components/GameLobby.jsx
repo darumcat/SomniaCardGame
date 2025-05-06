@@ -5,24 +5,26 @@ import PVEGame from './PVEGame';
 import ChatRulesModal from './ChatRulesModal';
 
 const GameLobby = () => {
+  const { nftBalance } = useWeb3();
   const [gameType, setGameType] = useState(null);
   const [showRules, setShowRules] = useState(false);
 
   const handleGameSelect = (type) => {
-    if (type === 'PVP') {
-      setShowRules(true);
-    } else {
-      setGameType(type);
+    if (nftBalance < 1) {
+      alert("You need to mint NFT first!");
+      return;
     }
+    if (type === 'PVP') setShowRules(true);
+    else setGameType(type);
   };
 
   return (
     <div className="game-lobby">
       {!gameType ? (
         <>
-          <h2>Выберите режим игры</h2>
-          <button onClick={() => handleGameSelect('PVE')}>PVE (против ИИ)</button>
-          <button onClick={() => handleGameSelect('PVP')}>PVP (против игрока)</button>
+          <h2>Select Game Mode</h2>
+          <button onClick={() => handleGameSelect('PVE')}>PVE (vs AI)</button>
+          <button onClick={() => handleGameSelect('PVP')}>PVP (vs Player)</button>
         </>
       ) : gameType === 'PVP' ? (
         <PVPLobby />
