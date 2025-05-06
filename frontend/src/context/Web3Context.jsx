@@ -34,36 +34,21 @@ export const Web3Provider = ({ children }) => {
         addresses: CONTRACT_ADDRESSES
       };
 
-      // Диагностика контрактов
-      useEffect(() => {
-        if (contracts?.nft) {
-          console.log("NFT contract methods:", 
-            contracts.nft.interface.fragments.map(f => f.name));
-          
-          contracts.nft.hasMinted(signer.address)
-            .then(hasMinted => console.log("NFT already minted:", hasMinted))
-            .catch(console.error);
-        }
-      }, [contracts, signer]);
+      // Диагностика контрактов (перенесено из useEffect)
+      console.log("NFT contract initialized:", contracts.nft.address);
+      console.log("USDCard contract initialized:", contracts.usdcard.address);
 
-      setState(prev => ({
-        ...prev,
-        contracts,
-        error: null
-      }));
+      setState(prev => ({ ...prev, contracts, error: null }));
+      return contracts;
     } catch (error) {
       console.error("Contract initialization failed:", error);
-      setState(prev => ({
-        ...prev,
-        error: error.message
-      }));
+      setState(prev => ({ ...prev, error: error.message }));
       throw error;
     }
   }, []);
 
   const connectWallet = useCallback(async () => {
-    if (!window.ethereum) {
-      setState(prev => ({ ...prev, isMetaMaskInstalled: false }));
+    if (!window.ethereum?.isMetaMask) {
       toast.error('Please install MetaMask!');
       return;
     }
@@ -81,7 +66,7 @@ export const Web3Provider = ({ children }) => {
         method: 'eth_requestAccounts' 
       });
       
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = new ethers.providers.Web3Provider(window.ethereum); // Исправлено на providers.Web3Provider
       const signer = await provider.getSigner();
       
       await initContracts(signer);
@@ -106,6 +91,8 @@ export const Web3Provider = ({ children }) => {
         : error.message);
     }
   }, [initContracts]);
+
+};
 
   useEffect(() => {
     const init = async () => {
