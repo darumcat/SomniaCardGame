@@ -8,7 +8,7 @@ const SOMNIA_CONFIG = {
   chainName: 'Somnia Testnet',
   nativeCurrency: {
     name: 'Somnia',
-    symbol: 'SOM', // Официальный символ
+    symbol: 'STT', // Официальный символ
     decimals: 18
   },
   rpcUrls: ['https://rpc.somnia.network'], // Основной RPC endpoint
