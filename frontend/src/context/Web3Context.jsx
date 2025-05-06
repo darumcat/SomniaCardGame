@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { CONTRACT_ADDRESSES, getContractABI } from '../context/contracts'; // Убедитесь, что путь правильный
-import { cleanMessage } from '../context/filterWords'; // Импортируем функцию для фильтрации
+import { cleanMessage } from '../context/filterWords'; // Используем правильный путь
 
 const Web3Context = createContext();
 
