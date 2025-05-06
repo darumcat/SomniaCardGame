@@ -1,67 +1,84 @@
-// frontend/src/context/Web3Context.jsx
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, getContractABI } from '../context/contracts';
-import { cleanMessage } from '../context/filterWords'; // Убедись, что путь правильный
+import { toast } from 'react-toastify';
 
-const Web3Context = createContext();
+export const Web3Context = createContext();
 
 export const Web3Provider = ({ children }) => {
   const [account, setAccount] = useState(null);
-  const [provider, setProvider] = useState(null);
-  const [nftBalance, setNftBalance] = useState(0);
-  const [contracts, setContracts] = useState({});
-
-  const initContracts = async (signer) => {
-    const [cardGameABI, nftABI, usdABI] = await Promise.all([
-      getContractABI('game'),
-      getContractABI('nft'),
-      getContractABI('usdcard'),
-    ]);
-
-    setContracts({
-      cardGameContract: new ethers.Contract(CONTRACT_ADDRESSES.game, cardGameABI, signer),
-      nftContract: new ethers.Contract(CONTRACT_ADDRESSES.nft, nftABI, signer),
-      usdcardContract: new ethers.Contract(CONTRACT_ADDRESSES.usdcard, usdABI, signer),
-    });
-  };
-
-  const connectWallet = async () => {
-    if (!window.ethereum) return;
-
-    const newProvider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await newProvider.getSigner();
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-
-    setProvider(newProvider);
-    setAccount(accounts[0]);
-    await initContracts(signer);
-  };
-
-  const updateBalances = async () => {
-    if (!contracts.nftContract || !account) return;
-    const balance = await contracts.nftContract.balanceOf(account);
-    setNftBalance(Number(balance));
-  };
+  const [contracts, setContracts] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (account && contracts.nftContract) {
-      updateBalances();
-    }
-  }, [account, contracts]);
+    const initWeb3 = async () => {
+      try {
+        if (!window.ethereum) {
+          throw new Error('MetaMask not installed!');
+        }
 
-  const handleMessageSend = (message) => {
-    const cleanedMessage = cleanMessage(message);
-    // Здесь должна быть функция sendMessage(cleanedMessage)
-    console.log('Отправлено сообщение:', cleanedMessage);
-  };
+        // Запрос доступа к аккаунту
+        const accounts = await window.ethereum.request({ 
+          method: 'eth_requestAccounts' 
+        });
+        setAccount(accounts[0]);
+
+        // Проверка сети (например, Polygon Mumbai Testnet)
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        if (chainId !== '0x13881') { // Замените на нужный chainId
+          toast.error('Please switch to Mumbai Testnet');
+          throw new Error('Wrong network');
+        }
+
+        // Инициализация провайдера и контрактов
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+
+        // Инициализация контрактов
+        const nftContract = new ethers.Contract(
+          process.env.REACT_APP_NFT_CONTRACT_ADDRESS,
+          NFT_ABI,
+          signer
+        );
+
+        const usdcardContract = new ethers.Contract(
+          process.env.REACT_APP_USDCARD_CONTRACT_ADDRESS,
+          USDCARD_ABI,
+          signer
+        );
+
+        setContracts({ nftContract, usdcardContract });
+        
+      } catch (error) {
+        console.error('Initialization error:', error);
+        toast.error(`Initialization failed: ${error.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initWeb3();
+
+    // Обработчики изменений аккаунта/сети
+    const handleAccountsChanged = (accounts) => {
+      setAccount(accounts[0] || null);
+    };
+
+    const handleChainChanged = () => window.location.reload();
+
+    window.ethereum?.on('accountsChanged', handleAccountsChanged);
+    window.ethereum?.on('chainChanged', handleChainChanged);
+
+    return () => {
+      window.ethereum?.removeListener('accountsChanged', handleAccountsChanged);
+      window.ethereum?.removeListener('chainChanged', handleChainChanged);
+    };
+  }, []);
+
+  if (isLoading) return <div>Loading...</div>;
 
   return (
-    <Web3Context.Provider value={{ account, connectWallet, nftBalance, contracts, updateBalances, handleMessageSend }}>
+    <Web3Context.Provider value={{ account, contracts }}>
       {children}
     </Web3Context.Provider>
   );
 };
-
-export const useWeb3 = () => useContext(Web3Context);
-
