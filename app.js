@@ -63,7 +63,6 @@ function App() {
   const [isCheckingNFT, setIsCheckingNFT] = useState(false);
   const [isCheckingUSDCard, setIsCheckingUSDCard] = useState(false);
 
-  // Contract addresses
   const NFT_CONTRACT_ADDRESS = "0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641";
   const USDCARD_CONTRACT_ADDRESS = "0x14A21748e5E9Da6B0d413256E3ae80ABEBd8CC80";
 
@@ -78,11 +77,11 @@ function App() {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
 
-      // Import ABIs
-      const nftAbi = await fetch('./abi/NFT.json').then(res => res.json());
-      const usdcardAbi = await fetch('./abi/USDCard.json').then(res => res.json());
+      const nftAbi = await fetch('./ABI/NFT.json').then(res => res.json());
+      const usdcardAbi = await fetch('./ABI/USDCard.json').then(res => res.json());
 
       return {
+        signer,
         nftContract: new ethers.Contract(NFT_CONTRACT_ADDRESS, nftAbi.abi, signer),
         usdcardContract: new ethers.Contract(USDCARD_CONTRACT_ADDRESS, usdcardAbi.abi, signer)
       };
@@ -93,22 +92,18 @@ function App() {
     }
   };
 
-  // Check and mint NFT
   const handleNFTMint = async () => {
     setIsCheckingNFT(true);
     try {
       const contracts = await getContracts();
       if (!contracts) return;
 
-      // Check NFT balance - this will open MetaMask
       const balance = await contracts.nftContract.balanceOf(account);
-      
       if (balance.gt(0)) {
         alert("You already own an NFT! Check your wallet.");
         return;
       }
 
-      // Mint NFT - this will open MetaMask again for transaction
       const tx = await contracts.nftContract.mint();
       await tx.wait();
       alert("NFT successfully minted! Check your wallet.");
@@ -120,22 +115,19 @@ function App() {
     }
   };
 
-  // Check and mint USDCard
   const handleUSDCardMint = async () => {
     setIsCheckingUSDCard(true);
     try {
       const contracts = await getContracts();
       if (!contracts) return;
 
-      // Check if already minted - this will open MetaMask
-      const hasMinted = await contracts.usdcardContract.hasMinted(account);
-      
-      if (hasMinted) {
-        alert("You already minted USDCard! Check your wallet.");
+      // Альтернатива: если нет метода hasMinted — проверяем баланс
+      const balance = await contracts.usdcardContract.balanceOf(account);
+      if (balance.gt(0)) {
+        alert("You already own USDCard! Check your wallet.");
         return;
       }
 
-      // Mint USDCard - this will open MetaMask again for transaction
       const tx = await contracts.usdcardContract.mint();
       await tx.wait();
       alert("10,000 USDCard successfully minted! Check your wallet.");
@@ -162,8 +154,6 @@ function App() {
     try {
       const message = `Sign this message to verify ownership of your wallet.\n\n` +
         `This action will not cost any gas or tokens.\n` +
-        `Please note: Only in-game tokens (minted through this site) will be used for gameplay transactions.\n` +
-        `You may also encounter minor testnet gas fees (STT) required by the Somnia Testnet.\n\n` +
         `Wallet: ${account}\n` +
         `Nonce: ${Math.floor(Math.random() * 10000)}`;
       
@@ -188,10 +178,7 @@ function App() {
         return;
       }
 
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      });
-      
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       setAccount(accounts[0]);
       await checkNetwork();
     } catch (error) {
