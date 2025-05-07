@@ -3,25 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- CSP Policy -->
+  <!-- ✅ ОБНОВЛЁННАЯ CSP-ПОЛИТИКА -->
   <meta http-equiv="Content-Security-Policy" content=" 
     default-src 'self'; 
-    script-src 'self' https://cdn.jsdelivr.net https://*.ethers.org https://*.ethers.io https://*.metamask.io https://unpkg.com; 
+    script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.ethers.org https://*.ethers.io https://*.metamask.io https://unpkg.com; 
     connect-src *; 
     style-src 'self' 'unsafe-inline'; 
     img-src * data:;">
   
   <title>Somnia Card Game</title>
   <link rel="icon" href="favicon.ico" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div id="root"></div>
 
-  <!-- Подключаем ethers.js (версия для браузера) -->
+  <!-- ethers.js (UMD) - безопасная версия -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
-  <!-- Подключаем твой app.js -->
+  <!-- React + ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- React App -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
-

@@ -76,7 +76,7 @@ const App = () => {
     if (isMobile) {
       setShowMobileGuide(true);
     }
-  }, [isMobile]); // Добавлен зависимость от isMobile
+  }, [isMobile]);
 
   if (showMobileGuide) {
     return (
