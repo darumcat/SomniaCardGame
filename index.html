@@ -1,28 +1,26 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self' https://cdn.jsdelivr.net;
-    style-src 'self' 'unsafe-inline';
-    connect-src *;
-  ">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- CSP Policy -->
+  <meta http-equiv="Content-Security-Policy" content=" 
+    default-src 'self'; 
+    script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net https://*.ethers.org https://*.ethers.io https://*.metamask.io; 
+    connect-src *; 
+    style-src 'self' 'unsafe-inline'; 
+    img-src * data:;">
   <title>Somnia Card Game</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
 </head>
 <body>
-  <div class="container">
-    <h1>🎮 Дурак на Somnia</h1>
-    <button id="connectWallet">Подключить MetaMask</button>
-    <button id="mintNft">Получить NFT</button>
-    <button id="mintUsdcard">Получить 10,000 USDCard</button>
-  </div>
-  <div id="error-message"></div>
+  <div id="root"></div>
 
-  
+  <!-- Подключаем ethers.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  
+  <!-- Подключаем app.js  -->
   <script src="app.js"></script>
 </body>
 </html>
+
