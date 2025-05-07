@@ -1,6 +1,30 @@
-const { useEffect, useState } = React;  // Подключаем React и его хук
+// Компонент Header
+function Header({ account, connectWallet }) {
+  return (
+    <header>
+      <h1>Somnia Card Game</h1>
+      {account ? (
+        <p>Connected: {account.slice(0, 6)}...{account.slice(-4)}</p>
+      ) : (
+        <button onClick={connectWallet} className="connect-wallet-btn">
+          Connect Wallet
+        </button>
+      )}
+    </header>
+  );
+}
 
-const App = () => {
+// Компонент NetworkAlert
+function NetworkAlert() {
+  return (
+    <div className="network-alert">
+      <p>Please switch to Somnia Testnet in MetaMask!</p>
+    </div>
+  );
+}
+
+// Главный компонент App
+function App() {
   const [account, setAccount] = useState('');
   const [isSomniaNetwork, setIsSomniaNetwork] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -9,7 +33,7 @@ const App = () => {
   const checkNetwork = async () => {
     if (window.ethereum) {
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      setIsSomniaNetwork(chainId === '0xc488'); // Это адрес сети Somnia Testnet
+      setIsSomniaNetwork(chainId === '0xc488');
     }
   };
 
@@ -18,16 +42,7 @@ const App = () => {
       if (!window.ethereum) {
         if (isMobile) {
           const wcUrl = `https://metamask.app.link/wc?uri=${encodeURIComponent(`https://${window.location.hostname}/connect`)}`;
-          const classicUrl = `https://metamask.app.link/browser/${encodeURIComponent(`${window.location.origin}?metamask_redirect=true`)}`;
-          
           window.location.href = wcUrl;
-          
-          setTimeout(() => {
-            if (!document.hidden) {
-              window.location.href = classicUrl;
-            }
-          }, 1000);
-
           return;
         }
         alert('Please install MetaMask!');
@@ -48,38 +63,23 @@ const App = () => {
   useEffect(() => {
     const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     setIsMobile(mobileCheck);
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('metamask_redirect') && window.ethereum) {
-      connectWallet();
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
     checkNetwork();
 
-    const handleAccountsChanged = (accounts) => {
-      setAccount(accounts.length > 0 ? accounts[0] : '');
-    };
-
     if (window.ethereum) {
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      window.ethereum.on('chainChanged', checkNetwork);
       return () => {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        window.ethereum.removeListener('chainChanged', checkNetwork);
       };
     }
-
-    if (isMobile) {
-      setShowMobileGuide(true);
-    }
-  }, [isMobile]);
+  }, []);
 
   if (showMobileGuide) {
     return (
       <div className="mobile-guide">
         <h2>Mobile Connection Guide</h2>
         <ol>
-          <li>Open the link in MetaMask browser</li>
-          <li>Refresh the page after opening</li>
+          <li>Open in MetaMask browser</li>
+          <li>Refresh the page</li>
           <li>Click "Connect Wallet"</li>
         </ol>
         <button 
@@ -97,11 +97,12 @@ const App = () => {
       <Header account={account} connectWallet={connectWallet} />
       {!isSomniaNetwork && <NetworkAlert />}
       <div className="dashboard">
-        {/* Здесь компоненты для игры */}
+        {/* Game components will go here */}
       </div>
     </div>
   );
-};
+}
 
-// Рендерим приложение в div#root
-ReactDOM.render(<App />, document.getElementById('root'));
+// Инициализация React
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
