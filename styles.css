@@ -1,9 +1,11 @@
 /* Основной фон страницы */
 body {
   font-family: sans-serif;
-  background: linear-gradient(135deg, #0057FF, #A533FF); /* Градиент фона */
+  background: linear-gradient(135deg, rgba(0, 87, 255, 0.7), rgba(165, 51, 255, 0.7)); /* Более мягкие градиенты с прозрачностью */
+  background-size: cover; /* Фон будет растягиваться по всему экрану */
+  background-position: center; /* Центрируем фон */
   margin: 0;
-  padding: 2rem;
+  padding: 0;
   color: white;
 }
 
@@ -42,7 +44,7 @@ body {
 /* Стили для блока мобильного руководства */
 .mobile-guide {
   padding: 20px;
-  background-color: #f4f4f4;
+  background-color: rgba(244, 244, 244, 0.9); /* Мягкий фон для мобильного руководства */
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   max-width: 400px;
