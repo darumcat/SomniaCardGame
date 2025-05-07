@@ -1,294 +1,311 @@
-/* Base Styles */
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
-  color: #ffffff;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
+const { useState, useEffect } = React;
+
+function Header({ account, isVerified }) {
+  return (
+    <header>
+      <h1>🎮 Somnia Card Game</h1>
+      {account && (
+        <div className="wallet-info">
+          <span className="wallet-address">
+            {account.slice(0, 6)}...{account.slice(-4)}
+          </span>
+          {isVerified && <span className="verified-badge">Verified</span>}
+        </div>
+      )}
+    </header>
+  );
 }
 
-.error-fallback {
-  color: #ff4444;
-  text-align: center;
-  padding: 50px 20px;
+function NetworkAlert() {
+  return (
+    <div className="network-alert">
+      ⚠️ Please switch to Somnia Testnet
+    </div>
+  );
 }
 
-/* App Container */
-.app-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
+function VerificationMessage() {
+  return (
+    <div className="verification-message">
+      <h3>Wallet Verification Required</h3>
+      <p>Sign the message in MetaMask to verify wallet ownership.</p>
+      <ul>
+        <li>No gas fees required</li>
+        <li>Only uses in-game tokens</li>
+        <li>Testnet may require minor STT gas fees</li>
+      </ul>
+    </div>
+  );
 }
 
-/* Header */
-header {
-  text-align: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+function MintButton({ assetType, isMinted, isProcessing, onClick }) {
+  const buttonStates = {
+    NFT: {
+      default: "MINT NFT",
+      checking: "CHECKING NFT...",
+      minted: "NFT MINTED"
+    },
+    USDCard: {
+      default: "MINT 10,000 USDCard",
+      checking: "CHECKING USDCard...",
+      minted: "USDCard MINTED"
+    }
+  };
+
+  const getButtonText = () => {
+    if (isProcessing) return buttonStates[assetType].checking;
+    if (isMinted) return buttonStates[assetType].minted;
+    return buttonStates[assetType].default;
+  };
+
+  return (
+    <button
+      className={`mint-btn ${isMinted ? 'minted' : ''} ${isProcessing ? 'processing' : ''}`}
+      onClick={onClick}
+      disabled={isProcessing || isMinted}
+    >
+      {getButtonText()}
+    </button>
+  );
 }
 
-header h1 {
-  margin: 0;
-  font-size: 2.5rem;
-  background: linear-gradient(90deg, #00dbde, #fc00ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+function App() {
+  const [account, setAccount] = useState('');
+  const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [nftStatus, setNftStatus] = useState({ isMinted: false, isProcessing: false });
+  const [usdcardStatus, setUsdcardStatus] = useState({ isMinted: false, isProcessing: false });
+
+  // Contract addresses
+  const NFT_CONTRACT_ADDRESS = "0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641";
+  const USDCARD_CONTRACT_ADDRESS = "0x14A21748e5E9Da6B0d413256E3ae80ABEBd8CC80";
+
+  // Connect to contracts
+  const getContracts = async () => {
+    if (!window.ethereum) {
+      alert('Please install MetaMask');
+      return null;
+    }
+
+    try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+
+      // Import ABIs
+      const nftAbi = await fetch('./abi/NFT.json').then(res => res.json());
+      const usdcardAbi = await fetch('./abi/USDCard.json').then(res => res.json());
+
+      return {
+        nftContract: new ethers.Contract(NFT_CONTRACT_ADDRESS, nftAbi.abi, signer),
+        usdcardContract: new ethers.Contract(USDCARD_CONTRACT_ADDRESS, usdcardAbi.abi, signer)
+      };
+    } catch (error) {
+      console.error("Error connecting contracts:", error);
+      alert("Error connecting to blockchain");
+      return null;
+    }
+  };
+
+  // Check asset status
+  const checkAssetStatus = async () => {
+    if (!account || !isVerified) return;
+
+    try {
+      const contracts = await getContracts();
+      if (!contracts) return;
+
+      // Check NFT
+      const nftBalance = await contracts.nftContract.balanceOf(account);
+      setNftStatus(prev => ({ ...prev, isMinted: nftBalance.gt(0) }));
+
+      // Check USDCard
+      const hasMintedUSDCard = await contracts.usdcardContract.hasMinted(account);
+      setUsdcardStatus(prev => ({ ...prev, isMinted: hasMintedUSDCard }));
+
+    } catch (error) {
+      console.error("Error checking assets:", error);
+    }
+  };
+
+  // Handle minting
+  const handleMint = async (assetType) => {
+    if (!account) return;
+
+    try {
+      // Set processing state
+      if (assetType === 'NFT') {
+        setNftStatus(prev => ({ ...prev, isProcessing: true }));
+      } else {
+        setUsdcardStatus(prev => ({ ...prev, isProcessing: true }));
+      }
+
+      const contracts = await getContracts();
+      if (!contracts) return;
+
+      if (assetType === 'NFT') {
+        // Check NFT balance first
+        const balance = await contracts.nftContract.balanceOf(account);
+        if (balance.gt(0)) {
+          setNftStatus({ isMinted: true, isProcessing: false });
+          return;
+        }
+
+        // Mint NFT
+        const tx = await contracts.nftContract.mint();
+        await tx.wait();
+        setNftStatus({ isMinted: true, isProcessing: false });
+        alert("NFT successfully minted!");
+
+      } else if (assetType === 'USDCard') {
+        // Check USDCard status first
+        const hasMinted = await contracts.usdcardContract.hasMinted(account);
+        if (hasMinted) {
+          setUsdcardStatus({ isMinted: true, isProcessing: false });
+          return;
+        }
+
+        // Mint USDCard
+        const tx = await contracts.usdcardContract.mint();
+        await tx.wait();
+        setUsdcardStatus({ isMinted: true, isProcessing: false });
+        alert("10,000 USDCard successfully minted!");
+      }
+
+    } catch (error) {
+      console.error(`Error minting ${assetType}:`, error);
+      alert(`Error: ${error.message}`);
+      
+      // Reset processing state
+      if (assetType === 'NFT') {
+        setNftStatus(prev => ({ ...prev, isProcessing: false }));
+      } else {
+        setUsdcardStatus(prev => ({ ...prev, isProcessing: false }));
+      }
+    }
+  };
+
+  const checkNetwork = async () => {
+    if (window.ethereum) {
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      setIsCorrectNetwork(chainId === '0xc488');
+    }
+  };
+
+  const verifyWallet = async () => {
+    if (!account) return;
+    
+    setIsLoading(true);
+    
+    try {
+      const message = `Sign this message to verify ownership of your wallet.\n\n` +
+        `This action will not cost any gas or tokens.\n` +
+        `Please note: Only in-game tokens (minted through this site) will be used for gameplay transactions.\n` +
+        `You may also encounter minor testnet gas fees (STT) required by the Somnia Testnet.\n\n` +
+        `Wallet: ${account}\n` +
+        `Nonce: ${Math.floor(Math.random() * 10000)}`;
+      
+      await window.ethereum.request({
+        method: 'personal_sign',
+        params: [message, account]
+      });
+      
+      setIsVerified(true);
+      await checkAssetStatus();
+    } catch (error) {
+      console.error('Verification error:', error);
+      alert('Wallet verification cancelled');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const connectWallet = async () => {
+    try {
+      if (!window.ethereum) {
+        alert('Please install MetaMask extension');
+        return;
+      }
+
+      const accounts = await window.ethereum.request({ 
+        method: 'eth_requestAccounts' 
+      });
+      
+      setAccount(accounts[0]);
+      await checkNetwork();
+    } catch (error) {
+      console.error('Connection error:', error);
+      alert(`Failed to connect: ${error.message}`);
+    }
+  };
+
+  useEffect(() => {
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', async (accounts) => {
+        setAccount(accounts[0] || '');
+        setIsVerified(false);
+        setNftStatus({ isMinted: false, isProcessing: false });
+        setUsdcardStatus({ isMinted: false, isProcessing: false });
+      });
+      
+      window.ethereum.on('chainChanged', () => {
+        window.location.reload();
+      });
+
+      if (account && isVerified) {
+        checkAssetStatus();
+      }
+    }
+  }, [account, isVerified]);
+
+  return (
+    <div className="app-container">
+      <Header account={account} isVerified={isVerified} />
+      
+      {!isCorrectNetwork && <NetworkAlert />}
+      
+      <div className="main-content">
+        {!account ? (
+          <div className="connect-section">
+            <button className="connect-btn" onClick={connectWallet}>
+              Connect MetaMask
+            </button>
+            <VerificationMessage />
+          </div>
+        ) : !isVerified ? (
+          <div className="verification-section">
+            <VerificationMessage />
+            <button 
+              className="verify-btn" 
+              onClick={verifyWallet}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Waiting for Signature...' : 'Verify Wallet'}
+            </button>
+          </div>
+        ) : (
+          <div className="game-section">
+            <h2>Welcome to Somnia Card Game</h2>
+            <div className="action-buttons">
+              <MintButton 
+                assetType="NFT"
+                isMinted={nftStatus.isMinted}
+                isProcessing={nftStatus.isProcessing}
+                onClick={() => handleMint('NFT')}
+              />
+              <MintButton 
+                assetType="USDCard"
+                isMinted={usdcardStatus.isMinted}
+                isProcessing={usdcardStatus.isProcessing}
+                onClick={() => handleMint('USDCard')}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
-.wallet-info {
-  margin-top: 15px;
-}
-
-.wallet-address {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-family: monospace;
-  display: inline-block;
-}
-
-.verified-badge {
-  background: #4CAF50;
-  color: white;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  margin-left: 10px;
-  vertical-align: middle;
-}
-
-/* Network Alert */
-.network-alert {
-  background: #ff4757;
-  color: white;
-  padding: 12px;
-  border-radius: 6px;
-  text-align: center;
-  margin-bottom: 25px;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 1; }
-}
-
-/* Main Content */
-.main-content {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  padding: 30px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.connect-section,
-.verification-section,
-.game-section {
-  text-align: center;
-}
-
-/* Verification Message */
-.verification-message {
-  background: rgba(0, 0, 0, 0.3);
-  border-left: 4px solid #00dbde;
-  padding: 20px;
-  margin: 25px 0;
-  text-align: left;
-  border-radius: 0 8px 8px 0;
-}
-
-.verification-message h3 {
-  margin-top: 0;
-  color: #00dbde;
-}
-
-.verification-message ul {
-  padding-left: 20px;
-}
-
-.verification-message li {
-  margin-bottom: 8px;
-}
-
-/* Buttons */
-.connect-btn,
-.verify-btn,
-.action-btn {
-  background: linear-gradient(90deg, #00c6ff, #0072ff);
-  color: white;
-  border: none;
-  padding: 14px 28px;
-  border-radius: 50px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  margin: 10px;
-  transition: all 0.3s ease;
-  display: inline-block;
-  min-width: 220px;
-}
-
-.connect-btn:hover,
-.verify-btn:hover,
-.action-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-}
-
-.verify-btn {
-  background: linear-gradient(90deg, #ff8a00, #e52e71);
-  margin-top: 20px;
-}
-
-.verify-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-.action-btn {
-  background: linear-gradient(90deg, #00dbde, #fc00ff);
-  margin: 10px;
-}
-
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-top: 30px;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .app-container {
-    padding: 15px;
-  }
-  
-  header h1 {
-    font-size: 2rem;
-  }
-  
-  .main-content {
-    padding: 20px;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-  }
-  
-  .connect-btn,
-  .verify-btn,
-  .action-btn {
-    width: 100%;
-    margin: 10px 0;
-  }
-}
-
-.mint-status {
-  margin: 10px;
-}
-
-.action-btn.minted {
-  background: linear-gradient(90deg, #4CAF50, #2E7D32);
-  cursor: default;
-}
-
-.action-btn.minted:hover {
-  transform: none;
-  box-shadow: none;
-}
-
-.minting-status {
-  margin-top: 20px;
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-}
-
-.minting-status p {
-  margin: 5px 0;
-}
-
-.action-btn.minted {
-  background: linear-gradient(90deg, #4CAF50, #2E7D32);
-  cursor: not-allowed;
-}
-
-.action-btn.minted:hover {
-  transform: none;
-  box-shadow: none;
-}
-
-.action-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.action-btn:disabled:not(.minted) {
-  background: linear-gradient(90deg, #666, #444);
-}
-
-.action-btn {
-  background: linear-gradient(90deg, #00dbde, #fc00ff);
-  color: white;
-  border: none;
-  padding: 14px 28px;
-  border-radius: 50px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  margin: 10px;
-  transition: all 0.3s ease;
-  min-width: 220px;
-}
-
-.action-btn:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-}
-
-.action-btn:disabled {
-  background: #666;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.action-btn {
-  background: linear-gradient(90deg, #00dbde, #fc00ff);
-  color: white;
-  border: none;
-  padding: 14px 28px;
-  border-radius: 50px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  margin: 10px;
-  transition: all 0.3s ease;
-  min-width: 220px;
-}
-
-.action-btn:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-}
-
-.action-btn:disabled {
-  background: #666;
-  cursor: progress;
-  opacity: 0.7;
-}
-
-.network-alert {
-  background: #ff4757;
-  color: white;
-  padding: 12px;
-  border-radius: 6px;
-  text-align: center;
-  margin-bottom: 25px;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 1; }
-}
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
