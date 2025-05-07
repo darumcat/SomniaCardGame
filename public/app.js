@@ -1,19 +1,21 @@
-// Защищенная загрузка ABI
+// Защищённая загрузка ABI
 async function loadABI(id) {
   try {
     const element = document.getElementById(id);
-    if (!element) throw new Error(`Element ${id} not found`);
-    
-    const response = await fetch(element.src);
+    if (!element) throw new Error(`Element with id "${id}" not found`);
+    const url = element.dataset.src;
+    if (!url) throw new Error(`data-src attribute missing on element "${id}"`);
+
+    const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    
+
     const data = await response.json();
-    if (!data.abi) throw new Error('ABI field missing in JSON');
-    
+    if (!data.abi) throw new Error(`ABI field missing in JSON at ${url}`);
+
     return data.abi;
   } catch (error) {
-    console.error(`Failed to load ABI ${id}:`, error);
-    showError(`Ошибка загрузки ABI: ${error.message}`);
+    console.error(`Failed to load ABI (${id}):`, error);
+    showError(`Ошибка загрузки ABI (${id}): ${error.message}`);
     return null;
   }
 }
@@ -85,10 +87,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       provider = new ethers.providers.Web3Provider(window.ethereum);
       const accounts = await provider.send("eth_requestAccounts", []);
       signer = provider.getSigner();
-      
+
       // Проверка сети
       const network = await provider.getNetwork();
-      if (network.chainId !== 12345) { // Замените на ID сети Somnia
+      if (network.chainId !== 12345) { // Замените на фактический chainId сети Somnia
         showError('Подключитесь к Somnia Testnet в MetaMask');
         return;
       }
