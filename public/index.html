@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Somnia Card Game</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Ethers.js из CDN -->
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>🎮 Дурак на Somnia</h1>
+    <button id="connectWallet">Подключить MetaMask</button>
+    <button id="mintNft">Получить NFT</button>
+    <button id="mintUsdcard">Получить 10,000 USDCard</button>
+  </div>
+
+  <!-- Загружаем ABI -->
+  <script src="../abi/NFT.json" type="application/json" id="nftAbi"></script>
+  <script src="../abi/USDCard.json" type="application/json" id="usdcardAbi"></script>
+  <script src="../abi/CardGame.json" type="application/json" id="gameAbi"></script>
+
+  <!-- Основной код -->
+  <script src="app.js"></script>
+</body>
+</html>
