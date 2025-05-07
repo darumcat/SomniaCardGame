@@ -38,25 +38,19 @@ function VerificationMessage() {
   );
 }
 
-function MintButton({ type, onMint, isProcessing }) {
+function MintButton({ type, onClick, isProcessing }) {
   const buttonText = {
-    NFT: {
-      default: "Mint NFT",
-      processing: "Processing..."
-    },
-    USDCard: {
-      default: "Mint 10,000 USDCard",
-      processing: "Processing..."
-    }
+    NFT: isProcessing ? "Checking NFT..." : "Mint NFT",
+    USDCard: isProcessing ? "Checking USDCard..." : "Mint 10,000 USDCard"
   };
 
   return (
     <button
       className="action-btn"
-      onClick={onMint}
+      onClick={onClick}
       disabled={isProcessing}
     >
-      {isProcessing ? buttonText[type].processing : buttonText[type].default}
+      {buttonText[type]}
     </button>
   );
 }
@@ -66,15 +60,15 @@ function App() {
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isMintingNFT, setIsMintingNFT] = useState(false);
-  const [isMintingUSDCard, setIsMintingUSDCard] = useState(false);
+  const [isCheckingNFT, setIsCheckingNFT] = useState(false);
+  const [isCheckingUSDCard, setIsCheckingUSDCard] = useState(false);
 
   // Contract addresses
   const NFT_CONTRACT_ADDRESS = "0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641";
   const USDCARD_CONTRACT_ADDRESS = "0x14A21748e5E9Da6B0d413256E3ae80ABEBd8CC80";
 
   // Connect to contracts
-  const connectContracts = async () => {
+  const getContracts = async () => {
     if (!window.ethereum) {
       alert('Please install MetaMask');
       return null;
@@ -88,56 +82,68 @@ function App() {
       const nftAbi = await fetch('./abi/NFT.json').then(res => res.json());
       const usdcardAbi = await fetch('./abi/USDCard.json').then(res => res.json());
 
-      const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, nftAbi.abi, signer);
-      const usdcardContract = new ethers.Contract(USDCARD_CONTRACT_ADDRESS, usdcardAbi.abi, signer);
-
-      return { nftContract, usdcardContract };
+      return {
+        nftContract: new ethers.Contract(NFT_CONTRACT_ADDRESS, nftAbi.abi, signer),
+        usdcardContract: new ethers.Contract(USDCARD_CONTRACT_ADDRESS, usdcardAbi.abi, signer)
+      };
     } catch (error) {
       console.error("Error connecting contracts:", error);
-      alert("Error connecting to contracts");
+      alert("Error connecting to blockchain");
       return null;
     }
   };
 
-  // Check asset status with MetaMask interaction
-  const checkAndMint = async (type) => {
-    if (!account) return;
-
+  // Check and mint NFT
+  const handleNFTMint = async () => {
+    setIsCheckingNFT(true);
     try {
-      const contracts = await connectContracts();
+      const contracts = await getContracts();
       if (!contracts) return;
 
-      if (type === 'NFT') {
-        setIsMintingNFT(true);
-        // First check if already minted
-        const balance = await contracts.nftContract.balanceOf(account);
-        if (balance.gt(0)) {
-          alert("You already have an NFT!");
-          return;
-        }
-        // If not minted, proceed with minting
-        const tx = await contracts.nftContract.mint();
-        await tx.wait();
-        alert("NFT successfully minted!");
-      } else if (type === 'USDCard') {
-        setIsMintingUSDCard(true);
-        // First check if already minted
-        const hasMinted = await contracts.usdcardContract.hasMinted(account);
-        if (hasMinted) {
-          alert("You already minted USDCard!");
-          return;
-        }
-        // If not minted, proceed with minting
-        const tx = await contracts.usdcardContract.mint();
-        await tx.wait();
-        alert("10,000 USDCard successfully minted!");
+      // Check NFT balance - this will open MetaMask
+      const balance = await contracts.nftContract.balanceOf(account);
+      
+      if (balance.gt(0)) {
+        alert("You already own an NFT! Check your wallet.");
+        return;
       }
+
+      // Mint NFT - this will open MetaMask again for transaction
+      const tx = await contracts.nftContract.mint();
+      await tx.wait();
+      alert("NFT successfully minted! Check your wallet.");
     } catch (error) {
-      console.error(`Error with ${type}:`, error);
-      alert(`Error: ${error.reason || error.message}`);
+      console.error("NFT error:", error);
+      alert(`Error: ${error.message}`);
     } finally {
-      if (type === 'NFT') setIsMintingNFT(false);
-      if (type === 'USDCard') setIsMintingUSDCard(false);
+      setIsCheckingNFT(false);
+    }
+  };
+
+  // Check and mint USDCard
+  const handleUSDCardMint = async () => {
+    setIsCheckingUSDCard(true);
+    try {
+      const contracts = await getContracts();
+      if (!contracts) return;
+
+      // Check if already minted - this will open MetaMask
+      const hasMinted = await contracts.usdcardContract.hasMinted(account);
+      
+      if (hasMinted) {
+        alert("You already minted USDCard! Check your wallet.");
+        return;
+      }
+
+      // Mint USDCard - this will open MetaMask again for transaction
+      const tx = await contracts.usdcardContract.mint();
+      await tx.wait();
+      alert("10,000 USDCard successfully minted! Check your wallet.");
+    } catch (error) {
+      console.error("USDCard error:", error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setIsCheckingUSDCard(false);
     }
   };
 
@@ -238,13 +244,13 @@ function App() {
             <div className="action-buttons">
               <MintButton 
                 type="NFT"
-                onMint={() => checkAndMint('NFT')}
-                isProcessing={isMintingNFT}
+                onClick={handleNFTMint}
+                isProcessing={isCheckingNFT}
               />
               <MintButton 
                 type="USDCard"
-                onMint={() => checkAndMint('USDCard')}
-                isProcessing={isMintingUSDCard}
+                onClick={handleUSDCardMint}
+                isProcessing={isCheckingUSDCard}
               />
             </div>
           </div>
