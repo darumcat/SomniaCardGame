@@ -210,3 +210,22 @@ header h1 {
 .minting-status p {
   margin: 5px 0;
 }
+
+.action-btn.minted {
+  background: linear-gradient(90deg, #4CAF50, #2E7D32);
+  cursor: not-allowed;
+}
+
+.action-btn.minted:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.action-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.action-btn:disabled:not(.minted) {
+  background: linear-gradient(90deg, #666, #444);
+}

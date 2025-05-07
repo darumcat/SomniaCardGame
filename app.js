@@ -38,31 +38,37 @@ function VerificationMessage() {
   );
 }
 
-function MintStatus({ hasMinted, isMinting, onMint, type }) {
+function MintStatus({ hasMinted, isMinting, onMint, type, isChecking }) {
   const messages = {
     NFT: {
       minted: "NFT already minted",
-      notMinted: "Click to mint NFT",
+      notMinted: "Mint NFT",
       minting: "Minting NFT..."
     },
     USDCard: {
       minted: "USDCard already minted",
-      notMinted: "Click to mint 10,000 USDCard",
+      notMinted: "Mint 10,000 USDCard",
       minting: "Minting USDCard..."
     }
   };
 
-  return (
-    <div className="mint-status">
-      <button 
-        className={`action-btn ${hasMinted ? 'minted' : ''}`}
-        onClick={onMint}
-        disabled={isMinting || hasMinted}
-      >
-        {isMinting ? messages[type].minting : 
-         hasMinted ? messages[type].minted : messages[type].notMinted}
+  if (isChecking) {
+    return (
+      <button className="action-btn" disabled>
+        Checking...
       </button>
-    </div>
+    );
+  }
+
+  return (
+    <button
+      className={`action-btn ${hasMinted ? 'minted' : ''}`}
+      onClick={onMint}
+      disabled={isMinting || hasMinted}
+    >
+      {isMinting ? messages[type].minting : 
+       hasMinted ? messages[type].minted : messages[type].notMinted}
+    </button>
   );
 }
 
@@ -71,10 +77,11 @@ function App() {
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasNFT, setHasNFT] = useState(false);
-  const [hasUSDCard, setHasUSDCard] = useState(false);
+  const [hasNFT, setHasNFT] = useState(null);
+  const [hasUSDCard, setHasUSDCard] = useState(null);
   const [isMintingNFT, setIsMintingNFT] = useState(false);
   const [isMintingUSDCard, setIsMintingUSDCard] = useState(false);
+  const [isCheckingAssets, setIsCheckingAssets] = useState(false);
 
   // Contract addresses
   const NFT_CONTRACT_ADDRESS = "0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641";
@@ -82,37 +89,48 @@ function App() {
 
   // Connect to contracts
   const connectContracts = async () => {
-    if (!window.ethereum) return;
+    if (!window.ethereum) return null;
 
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
+    try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
 
-    // Import ABIs
-    const nftAbi = await fetch('./abi/NFT.json').then(res => res.json());
-    const usdcardAbi = await fetch('./abi/USDCard.json').then(res => res.json());
+      // Import ABIs
+      const nftAbi = await fetch('./abi/NFT.json').then(res => res.json());
+      const usdcardAbi = await fetch('./abi/USDCard.json').then(res => res.json());
 
-    const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, nftAbi.abi, signer);
-    const usdcardContract = new ethers.Contract(USDCARD_CONTRACT_ADDRESS, usdcardAbi.abi, signer);
+      const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, nftAbi.abi, signer);
+      const usdcardContract = new ethers.Contract(USDCARD_CONTRACT_ADDRESS, usdcardAbi.abi, signer);
 
-    return { nftContract, usdcardContract };
+      return { nftContract, usdcardContract };
+    } catch (error) {
+      console.error("Error connecting contracts:", error);
+      return null;
+    }
   };
 
   // Check user assets
   const checkUserAssets = async () => {
     if (!account) return;
 
+    setIsCheckingAssets(true);
     try {
-      const { nftContract, usdcardContract } = await connectContracts();
-      
+      const contracts = await connectContracts();
+      if (!contracts) return;
+
       // Check NFT
-      const nftBalance = await nftContract.balanceOf(account);
+      const nftBalance = await contracts.nftContract.balanceOf(account);
       setHasNFT(nftBalance.gt(0));
       
       // Check USDCard
-      const hasMintedUSDCard = await usdcardContract.hasMinted(account);
+      const hasMintedUSDCard = await contracts.usdcardContract.hasMinted(account);
       setHasUSDCard(hasMintedUSDCard);
     } catch (error) {
       console.error("Error checking assets:", error);
+      setHasNFT(false);
+      setHasUSDCard(false);
+    } finally {
+      setIsCheckingAssets(false);
     }
   };
 
@@ -120,14 +138,16 @@ function App() {
   const mintNFT = async () => {
     setIsMintingNFT(true);
     try {
-      const { nftContract } = await connectContracts();
-      const tx = await nftContract.mint();
+      const contracts = await connectContracts();
+      if (!contracts) return;
+
+      const tx = await contracts.nftContract.mint();
       await tx.wait();
       setHasNFT(true);
       alert("NFT successfully minted!");
     } catch (error) {
       console.error("Error minting NFT:", error);
-      alert("Error minting NFT: " + error.message);
+      alert("Error minting NFT: " + (error.reason || error.message));
     } finally {
       setIsMintingNFT(false);
     }
@@ -137,14 +157,16 @@ function App() {
   const mintUSDCard = async () => {
     setIsMintingUSDCard(true);
     try {
-      const { usdcardContract } = await connectContracts();
-      const tx = await usdcardContract.mint();
+      const contracts = await connectContracts();
+      if (!contracts) return;
+
+      const tx = await contracts.usdcardContract.mint();
       await tx.wait();
       setHasUSDCard(true);
       alert("10,000 USDCard successfully minted!");
     } catch (error) {
       console.error("Error minting USDCard:", error);
-      alert("Error minting USDCard: " + error.message);
+      alert("Error minting USDCard: " + (error.reason || error.message));
     } finally {
       setIsMintingUSDCard(false);
     }
@@ -152,8 +174,12 @@ function App() {
 
   const checkNetwork = async () => {
     if (window.ethereum) {
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      setIsCorrectNetwork(chainId === '0xc488');
+      try {
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        setIsCorrectNetwork(chainId === '0xc488');
+      } catch (error) {
+        console.error("Error checking network:", error);
+      }
     }
   };
 
@@ -209,8 +235,8 @@ function App() {
       window.ethereum.on('accountsChanged', (accounts) => {
         setAccount(accounts[0] || '');
         setIsVerified(false);
-        setHasNFT(false);
-        setHasUSDCard(false);
+        setHasNFT(null);
+        setHasUSDCard(null);
       });
       
       window.ethereum.on('chainChanged', () => {
@@ -257,12 +283,14 @@ function App() {
                 isMinting={isMintingNFT}
                 onMint={mintNFT}
                 type="NFT"
+                isChecking={hasNFT === null || isCheckingAssets}
               />
               <MintStatus 
                 hasMinted={hasUSDCard}
                 isMinting={isMintingUSDCard}
                 onMint={mintUSDCard}
                 type="USDCard"
+                isChecking={hasUSDCard === null || isCheckingAssets}
               />
             </div>
           </div>
