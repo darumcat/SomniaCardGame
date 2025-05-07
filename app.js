@@ -1,24 +1,17 @@
-// Защищённая загрузка ABI
-async function loadABI(id) {
+async function loadABI(fileName) {
   try {
-    const element = document.getElementById(id);
-    if (!element) throw new Error(`Element with id "${id}" not found`);
-    const url = element.dataset.src;
-    if (!url) throw new Error(`data-src attribute missing on element "${id}"`);
-
-    const response = await fetch(url);
+    const response = await fetch(`abi/${fileName}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
     const data = await response.json();
-    return data.abi || data; // поддержка формата с или без поля "abi"
+    if (!data.abi) throw new Error(`ABI field missing in ${fileName}`);
+    return data.abi;
   } catch (error) {
-    console.error(`Failed to load ABI (${id}):`, error);
-    showError(`Ошибка загрузки ABI (${id}): ${error.message}`);
+    console.error(`Failed to load ABI (${fileName}):`, error);
+    showError(`Ошибка загрузки ABI (${fileName}): ${error.message}`);
     return null;
   }
 }
 
-// Показ ошибок
 function showError(message) {
   const errorDiv = document.getElementById('error-message') || createErrorElement();
   errorDiv.textContent = message;
@@ -44,20 +37,17 @@ function createErrorElement() {
   return div;
 }
 
-// Основной код
 document.addEventListener('DOMContentLoaded', async () => {
-  // Загружаем ABI асинхронно
   const [nftAbi, usdcardAbi, gameAbi] = await Promise.all([
-    loadABI('nftAbi'),
-    loadABI('usdcardAbi'),
-    loadABI('gameAbi')
+    loadABI('NFT.json'),
+    loadABI('USDCard.json'),
+    loadABI('CardGame.json')
   ]);
 
   if (!nftAbi || !usdcardAbi || !gameAbi) {
     return showError('Не удалось загрузить данные контрактов. Обновите страницу.');
   }
 
-  // Адреса контрактов
   const CONTRACTS = {
     NFT: {
       address: "0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641",
@@ -75,7 +65,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let provider, signer, nftContract, usdcardContract, gameContract;
 
-  // Подключение кошелька
   document.getElementById('connectWallet').addEventListener('click', async () => {
     if (!window.ethereum) {
       return showError('Установите MetaMask! https://metamask.io');
@@ -87,8 +76,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       signer = provider.getSigner();
 
       const network = await provider.getNetwork();
-      if (network.chainId !== 12345) { // Замените на фактический chainId Somnia
-        return showError('Подключитесь к Somnia Testnet в MetaMask');
+      if (network.chainId !== 12345) {
+        showError('Подключитесь к Somnia Testnet в MetaMask');
+        return;
       }
 
       initContracts();
@@ -99,7 +89,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Инициализация контрактов
   function initContracts() {
     try {
       nftContract = new ethers.Contract(CONTRACTS.NFT.address, CONTRACTS.NFT.abi, signer);
@@ -111,9 +100,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Минт NFT
   document.getElementById('mintNft').addEventListener('click', async () => {
     if (!nftContract) return showError('Сначала подключите кошелек!');
+
     try {
       const tx = await nftContract.mint();
       showError('Транзакция отправлена! Ожидайте подтверждения...');
@@ -125,9 +114,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Минт USDCard
   document.getElementById('mintUsdcard').addEventListener('click', async () => {
     if (!usdcardContract) return showError('Сначала подключите кошелек!');
+
     try {
       const tx = await usdcardContract.mint();
       showError('Транзакция отправлена! Ожидайте подтверждения...');
