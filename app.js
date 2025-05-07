@@ -1,12 +1,17 @@
+// Деструктуризация React-хуков
+const { useState, useEffect } = React;
+
 // Компонент Header
 function Header({ account, connectWallet }) {
   return (
     <header>
-      <h1>Somnia Card Game</h1>
+      <h1>🎮 Somnia Card Game</h1>
       {account ? (
-        <p>Connected: {account.slice(0, 6)}...{account.slice(-4)}</p>
+        <p className="wallet-address">
+          {account.slice(0, 6)}...{account.slice(-4)}
+        </p>
       ) : (
-        <button onClick={connectWallet} className="connect-wallet-btn">
+        <button onClick={connectWallet} className="connect-btn">
           Connect Wallet
         </button>
       )}
@@ -14,95 +19,92 @@ function Header({ account, connectWallet }) {
   );
 }
 
-// Компонент NetworkAlert
+// Компонент предупреждения о сети
 function NetworkAlert() {
   return (
     <div className="network-alert">
-      <p>Please switch to Somnia Testnet in MetaMask!</p>
+      ⚠️ Switch to Somnia Testnet in MetaMask (ChainID: 0xc488)
     </div>
   );
 }
 
-// Главный компонент App
+// Главный компонент
 function App() {
   const [account, setAccount] = useState('');
-  const [isSomniaNetwork, setIsSomniaNetwork] = useState(false);
+  const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [showMobileGuide, setShowMobileGuide] = useState(false);
 
+  // Проверка сети
   const checkNetwork = async () => {
     if (window.ethereum) {
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      setIsSomniaNetwork(chainId === '0xc488');
+      setIsCorrectNetwork(chainId === '0xc488');
     }
   };
 
+  // Подключение кошелька
   const connectWallet = async () => {
     try {
       if (!window.ethereum) {
-        if (isMobile) {
-          const wcUrl = `https://metamask.app.link/wc?uri=${encodeURIComponent(`https://${window.location.hostname}/connect`)}`;
-          window.location.href = wcUrl;
-          return;
-        }
         alert('Please install MetaMask!');
         return;
       }
 
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const accounts = await window.ethereum.request({ 
+        method: 'eth_requestAccounts' 
+      });
+      
       if (accounts.length > 0) {
         setAccount(accounts[0]);
         await checkNetwork();
       }
     } catch (error) {
-      console.error("Connection error:", error);
-      alert(`Connection failed: ${error.message}`);
+      console.error('Connection error:', error);
+      alert(`Error: ${error.message}`);
     }
   };
 
+  // Эффекты при загрузке
   useEffect(() => {
-    const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    setIsMobile(mobileCheck);
-    checkNetwork();
-
+    // Проверка мобильного устройства
+    setIsMobile(/Mobi|Android/i.test(navigator.userAgent));
+    
+    // Слушатели изменений
     if (window.ethereum) {
+      window.ethereum.on('accountsChanged', (accounts) => {
+        setAccount(accounts[0] || '');
+      });
+      
       window.ethereum.on('chainChanged', checkNetwork);
-      return () => {
-        window.ethereum.removeListener('chainChanged', checkNetwork);
-      };
     }
   }, []);
 
-  if (showMobileGuide) {
-    return (
-      <div className="mobile-guide">
-        <h2>Mobile Connection Guide</h2>
-        <ol>
-          <li>Open in MetaMask browser</li>
-          <li>Refresh the page</li>
-          <li>Click "Connect Wallet"</li>
-        </ol>
-        <button 
-          onClick={() => window.location.href = `https://metamask.app.link/browser/${encodeURIComponent(window.location.href)}`}
-          className="action-btn"
-        >
-          Open in MetaMask
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="app">
+    <div className="app-container">
       <Header account={account} connectWallet={connectWallet} />
-      {!isSomniaNetwork && <NetworkAlert />}
-      <div className="dashboard">
-        {/* Game components will go here */}
+      
+      {!isCorrectNetwork && <NetworkAlert />}
+      
+      <div className="game-area">
+        {account ? (
+          <div className="game-ui">
+            <button className="action-btn" onClick={() => alert('Mint NFT')}>
+              Mint NFT
+            </button>
+            <button className="action-btn" onClick={() => alert('Mint USDCard')}>
+              Mint 10,000 USDCard
+            </button>
+          </div>
+        ) : (
+          <p className="connect-hint">
+            Connect your wallet to start playing
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
-// Инициализация React
+// Рендеринг приложения
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);

@@ -5,18 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Somnia Card Game</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Подключаем Babel для обработки JSX -->
+  <!-- React 18 + хуки -->
+  <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <!-- Babel для JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- React и ReactDOM -->
-  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
   <!-- Ethers.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
   <div id="root"></div>
   
-  <!-- Подключаем app.js с типом text/babel -->
-  <script type="text/babel" src="app.js"></script>
+  <!-- Основной скрипт с типом text/babel -->
+  <script type="text/babel" data-presets="react" src="app.js"></script>
+  
+  <!-- Fallback для случаев, если Babel не загрузился -->
+  <script>
+    if (typeof Babel === 'undefined') {
+      document.getElementById('root').innerHTML = `
+        <div style="color: red; padding: 20px;">
+          <h2>Ошибка загрузки Babel</h2>
+          <p>Обновите страницу или проверьте интернет-соединение</p>
+        </div>
+      `;
+    }
+  </script>
 </body>
 </html>
