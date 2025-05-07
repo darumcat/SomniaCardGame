@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import './styles/globals.css'; // Стиль
+const { useEffect, useState } = React;  // Подключаем React и его хук
 
 const App = () => {
   const [account, setAccount] = useState('');
@@ -18,7 +17,6 @@ const App = () => {
     try {
       if (!window.ethereum) {
         if (isMobile) {
-          // Пробуем оба метода для максимальной совместимости
           const wcUrl = `https://metamask.app.link/wc?uri=${encodeURIComponent(`https://${window.location.hostname}/connect`)}`;
           const classicUrl = `https://metamask.app.link/browser/${encodeURIComponent(`${window.location.origin}?metamask_redirect=true`)}`;
           
@@ -36,7 +34,6 @@ const App = () => {
         return;
       }
 
-      // Подключаем MetaMask
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       if (accounts.length > 0) {
         setAccount(accounts[0]);
@@ -52,7 +49,6 @@ const App = () => {
     const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     setIsMobile(mobileCheck);
 
-    // Проверяем, если вернулся параметр из MetaMask
     const params = new URLSearchParams(window.location.search);
     if (params.has('metamask_redirect') && window.ethereum) {
       connectWallet();
@@ -60,7 +56,7 @@ const App = () => {
     }
 
     checkNetwork();
-    
+
     const handleAccountsChanged = (accounts) => {
       setAccount(accounts.length > 0 ? accounts[0] : '');
     };
@@ -72,7 +68,6 @@ const App = () => {
       };
     }
 
-    // Показываем руководство, если это мобильное устройство
     if (isMobile) {
       setShowMobileGuide(true);
     }
@@ -108,5 +103,5 @@ const App = () => {
   );
 };
 
-export default App;
-
+// Рендерим приложение в div#root
+ReactDOM.render(<App />, document.getElementById('root'));
