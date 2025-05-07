@@ -101,3 +101,38 @@ header h1 {
     font-size: 0.9rem;
   }
 }
+
+.verify-btn {
+  background: linear-gradient(90deg, #ff8a00, #e52e71);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin: 20px auto;
+  display: block;
+  transition: all 0.3s;
+}
+
+.verify-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(229, 46, 113, 0.4);
+}
+
+.verification-status {
+  text-align: center;
+  margin: 15px 0;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.verified-badge {
+  display: inline-block;
+  background: #4CAF50;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  margin-left: 10px;
+}

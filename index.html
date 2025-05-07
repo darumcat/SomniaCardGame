@@ -3,29 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Somnia Card Game</title>
+  <title>Somnia Card Game - Wallet Verification</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- React 18 + хуки -->
   <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
-  <!-- Babel для JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Ethers.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
   <div id="root"></div>
   
-  <!-- Основной скрипт с типом text/babel -->
   <script type="text/babel" data-presets="react" src="app.js"></script>
   
-  <!-- Fallback для случаев, если Babel не загрузился -->
   <script>
     if (typeof Babel === 'undefined') {
       document.getElementById('root').innerHTML = `
-        <div style="color: red; padding: 20px;">
-          <h2>Ошибка загрузки Babel</h2>
-          <p>Обновите страницу или проверьте интернет-соединение</p>
+        <div class="error-fallback">
+          <h2>Error loading Babel compiler</h2>
+          <p>Please refresh the page or check your internet connection</p>
         </div>
       `;
     }
