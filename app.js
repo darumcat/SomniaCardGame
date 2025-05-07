@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import './styles/globals.css'; // Стиль
 
 const App = () => {
   const [account, setAccount] = useState('');
@@ -9,41 +10,37 @@ const App = () => {
   const checkNetwork = async () => {
     if (window.ethereum) {
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      setIsSomniaNetwork(chainId === '0xc488'); // Somnia Testnet chain ID
+      setIsSomniaNetwork(chainId === '0xc488'); // Это адрес сети Somnia Testnet
     }
   };
 
   const connectWallet = async () => {
     try {
-      if (account) return; // Не вызываем повторно, если уже подключено
-
       if (!window.ethereum) {
         if (isMobile) {
+          // Пробуем оба метода для максимальной совместимости
           const wcUrl = `https://metamask.app.link/wc?uri=${encodeURIComponent(`https://${window.location.hostname}/connect`)}`;
           const classicUrl = `https://metamask.app.link/browser/${encodeURIComponent(`${window.location.origin}?metamask_redirect=true`)}`;
+          
           window.location.href = wcUrl;
-
+          
           setTimeout(() => {
             if (!document.hidden) {
               window.location.href = classicUrl;
             }
           }, 1000);
+
           return;
         }
         alert('Please install MetaMask!');
         return;
       }
 
+      // Подключаем MetaMask
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       if (accounts.length > 0) {
         setAccount(accounts[0]);
         await checkNetwork();
-
-        const message = `Sign this message to confirm you own this wallet.\n\nNo funds will be spent.\n\nOnly in-game tokens will be used inside the app after minting. Gas fees are paid in STT (Somnia Testnet token).`;
-        await window.ethereum.request({
-          method: 'personal_sign',
-          params: [message, accounts[0]],
-        });
       }
     } catch (error) {
       console.error("Connection error:", error);
@@ -55,6 +52,7 @@ const App = () => {
     const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     setIsMobile(mobileCheck);
 
+    // Проверяем, если вернулся параметр из MetaMask
     const params = new URLSearchParams(window.location.search);
     if (params.has('metamask_redirect') && window.ethereum) {
       connectWallet();
@@ -62,7 +60,7 @@ const App = () => {
     }
 
     checkNetwork();
-
+    
     const handleAccountsChanged = (accounts) => {
       setAccount(accounts.length > 0 ? accounts[0] : '');
     };
@@ -74,10 +72,11 @@ const App = () => {
       };
     }
 
+    // Показываем руководство, если это мобильное устройство
     if (isMobile) {
       setShowMobileGuide(true);
     }
-  }, [isMobile]);
+  }, [isMobile]); // Добавлен зависимость от isMobile
 
   if (showMobileGuide) {
     return (
@@ -100,24 +99,11 @@ const App = () => {
 
   return (
     <div className="app">
-      <h1>Somnia Card Game</h1>
-      <button 
-        onClick={connectWallet} 
-        className="connect-wallet-btn"
-        disabled={!!account} // Блокируем, если кошелёк подключён
-      >
-        {account ? 'Connected' : 'Connect Wallet'}
-      </button>
-      {account && (
-        <div className="wallet-status">
-          Connected: {account}
-        </div>
-      )}
-      {!isSomniaNetwork && (
-        <div className="wallet-status" style={{ backgroundColor: '#ffdddd', color: '#000' }}>
-          Please switch to the Somnia Testnet
-        </div>
-      )}
+      <Header account={account} connectWallet={connectWallet} />
+      {!isSomniaNetwork && <NetworkAlert />}
+      <div className="dashboard">
+        {/* Здесь компоненты для игры */}
+      </div>
     </div>
   );
 };
