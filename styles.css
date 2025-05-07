@@ -1,24 +1,32 @@
-/* Базовые стили */
+/* Base Styles */
 body {
-  font-family: 'Arial', sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #1a1a2e, #16213e);
-  color: #fff;
+  color: #ffffff;
   margin: 0;
-  padding: 20px;
+  padding: 0;
   min-height: 100vh;
 }
 
-/* Контейнер приложения */
+.error-fallback {
+  color: #ff4444;
+  text-align: center;
+  padding: 50px 20px;
+}
+
+/* App Container */
 .app-container {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
 }
 
-/* Шапка */
+/* Header */
 header {
   text-align: center;
   margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 header h1 {
@@ -29,110 +37,151 @@ header h1 {
   -webkit-text-fill-color: transparent;
 }
 
-/* Кнопки */
-.connect-btn, .action-btn {
-  background: linear-gradient(90deg, #00c6ff, #0072ff);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 50px;
-  font-size: 1rem;
-  cursor: pointer;
-  margin: 10px;
-  transition: transform 0.3s;
+.wallet-info {
+  margin-top: 15px;
 }
 
-.connect-btn:hover, .action-btn:hover {
-  transform: translateY(-3px);
-}
-
-/* Адрес кошелька */
 .wallet-address {
   background: rgba(255, 255, 255, 0.1);
-  padding: 10px 15px;
-  border-radius: 50px;
-  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
   font-family: monospace;
+  display: inline-block;
 }
 
-/* Предупреждение о сети */
+.verified-badge {
+  background: #4CAF50;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+/* Network Alert */
 .network-alert {
   background: #ff4757;
-  padding: 10px;
-  border-radius: 5px;
+  color: white;
+  padding: 12px;
+  border-radius: 6px;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
   animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
-  0% { opacity: 0.8; }
+  0%, 100% { opacity: 0.8; }
   50% { opacity: 1; }
-  100% { opacity: 0.8; }
 }
 
-/* Игровая область */
-.game-area {
+/* Main Content */
+.main-content {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 10px;
   padding: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.connect-section,
+.verification-section,
+.game-section {
   text-align: center;
 }
 
-.game-ui {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+/* Verification Message */
+.verification-message {
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 4px solid #00dbde;
+  padding: 20px;
+  margin: 25px 0;
+  text-align: left;
+  border-radius: 0 8px 8px 0;
 }
 
-.connect-hint {
-  opacity: 0.7;
-  font-style: italic;
+.verification-message h3 {
+  margin-top: 0;
+  color: #00dbde;
 }
 
-/* Мобильная адаптация */
-@media (max-width: 600px) {
-  header h1 {
-    font-size: 1.8rem;
-  }
-  
-  .connect-btn, .action-btn {
-    padding: 10px 20px;
-    font-size: 0.9rem;
-  }
+.verification-message ul {
+  padding-left: 20px;
+}
+
+.verification-message li {
+  margin-bottom: 8px;
+}
+
+/* Buttons */
+.connect-btn,
+.verify-btn,
+.action-btn {
+  background: linear-gradient(90deg, #00c6ff, #0072ff);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  margin: 10px;
+  transition: all 0.3s ease;
+  display: inline-block;
+  min-width: 220px;
+}
+
+.connect-btn:hover,
+.verify-btn:hover,
+.action-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 .verify-btn {
   background: linear-gradient(90deg, #ff8a00, #e52e71);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 50px;
-  font-size: 1rem;
-  cursor: pointer;
-  margin: 20px auto;
-  display: block;
-  transition: all 0.3s;
+  margin-top: 20px;
 }
 
-.verify-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 5px 15px rgba(229, 46, 113, 0.4);
+.verify-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none !important;
 }
 
-.verification-status {
-  text-align: center;
-  margin: 15px 0;
-  font-size: 0.9rem;
-  color: #aaa;
+.action-btn {
+  background: linear-gradient(90deg, #00dbde, #fc00ff);
+  margin: 10px;
 }
 
-.verified-badge {
-  display: inline-block;
-  background: #4CAF50;
-  color: white;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  margin-left: 10px;
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 15px;
+  }
+  
+  header h1 {
+    font-size: 2rem;
+  }
+  
+  .main-content {
+    padding: 20px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .connect-btn,
+  .verify-btn,
+  .action-btn {
+    width: 100%;
+    margin: 10px 0;
+  }
 }
