@@ -1,33 +1,50 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
     script-src 'self' https://cdn.jsdelivr.net;
     style-src 'self' 'unsafe-inline';
-    connect-src https://*.somnia.network;
+    connect-src *;
   ">
   <title>Somnia Card Game</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>🎮 Дурак на Somnia</h1>
-    <button id="connectWallet">Подключить MetaMask</button>
-    <button id="mintNft">Получить NFT</button>
-    <button id="mintUsdcard">Получить 10,000 USDCard</button>
+    <button id="connectWallet" name="connectWallet">Подключить MetaMask</button>
+    <button id="mintNft" name="mintNft">Получить NFT</button>
+    <button id="mintUsdcard" name="mintUsdcard">Получить 10,000 USDCard</button>
   </div>
 
   <div id="error-message" style="display:none; position:fixed; bottom:20px; right:20px; padding:15px; background:#ff4444; color:white; border-radius:5px; z-index:1000;"></div>
 
-  <!-- Подключаем ABI как JSON -->
-  <script id="nftAbi" type="application/json" src="abi/NFT.json"></script>
-  <script id="usdcardAbi" type="application/json" src="abi/USDCard.json"></script>
-  <script id="gameAbi" type="application/json" src="abi/CardGame.json"></script>
+  <script>
+    // Указываем пути к ABI-файлам через data-src
+    const nftAbi = document.createElement('script');
+    nftAbi.id = 'nftAbi';
+    nftAbi.type = 'application/json';
+    nftAbi.dataset.src = 'abi/NFT.json';
+    document.body.appendChild(nftAbi);
+
+    const usdAbi = document.createElement('script');
+    usdAbi.id = 'usdcardAbi';
+    usdAbi.type = 'application/json';
+    usdAbi.dataset.src = 'abi/USDCard.json';
+    document.body.appendChild(usdAbi);
+
+    const gameAbi = document.createElement('script');
+    gameAbi.id = 'gameAbi';
+    gameAbi.type = 'application/json';
+    gameAbi.dataset.src = 'abi/CardGame.json';
+    document.body.appendChild(gameAbi);
+  </script>
 
   <script src="app.js"></script>
 </body>
 </html>
+
