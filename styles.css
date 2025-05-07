@@ -185,3 +185,28 @@ header h1 {
     margin: 10px 0;
   }
 }
+
+.mint-status {
+  margin: 10px;
+}
+
+.action-btn.minted {
+  background: linear-gradient(90deg, #4CAF50, #2E7D32);
+  cursor: default;
+}
+
+.action-btn.minted:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.minting-status {
+  margin-top: 20px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.minting-status p {
+  margin: 5px 0;
+}
