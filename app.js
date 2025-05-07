@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import './styles/globals.css'; // Стиль
+import './styles.css'; // Подключение основного стиля
 
 const App = () => {
   const [account, setAccount] = useState('');
@@ -10,7 +10,7 @@ const App = () => {
   const checkNetwork = async () => {
     if (window.ethereum) {
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      setIsSomniaNetwork(chainId === '0xc488'); // Это адрес сети Somnia Testnet
+      setIsSomniaNetwork(chainId === '0xc488');
     }
   };
 
@@ -18,16 +18,12 @@ const App = () => {
     try {
       if (!window.ethereum) {
         if (isMobile) {
-          // Пробуем оба метода для максимальной совместимости
           const wcUrl = `https://metamask.app.link/wc?uri=${encodeURIComponent(`https://${window.location.hostname}/connect`)}`;
           const classicUrl = `https://metamask.app.link/browser/${encodeURIComponent(`${window.location.origin}?metamask_redirect=true`)}`;
-          
+
           window.location.href = wcUrl;
-          
           setTimeout(() => {
-            if (!document.hidden) {
-              window.location.href = classicUrl;
-            }
+            if (!document.hidden) window.location.href = classicUrl;
           }, 1000);
 
           return;
@@ -36,7 +32,6 @@ const App = () => {
         return;
       }
 
-      // Подключаем MetaMask
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       if (accounts.length > 0) {
         setAccount(accounts[0]);
@@ -52,7 +47,6 @@ const App = () => {
     const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     setIsMobile(mobileCheck);
 
-    // Проверяем, если вернулся параметр из MetaMask
     const params = new URLSearchParams(window.location.search);
     if (params.has('metamask_redirect') && window.ethereum) {
       connectWallet();
@@ -60,16 +54,18 @@ const App = () => {
     }
 
     checkNetwork();
-    
+
     const handleAccountsChanged = (accounts) => {
       setAccount(accounts.length > 0 ? accounts[0] : '');
     };
 
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
-      return () => {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-      };
+      return () => window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+    }
+
+    if (mobileCheck) {
+      setShowMobileGuide(true);
     }
   }, []);
 
@@ -78,11 +74,11 @@ const App = () => {
       <div className="mobile-guide">
         <h2>Mobile Connection Guide</h2>
         <ol>
-          <li>Open link in MetaMask browser</li>
+          <li>Open the link in MetaMask browser</li>
           <li>Refresh the page after opening</li>
           <li>Click "Connect Wallet"</li>
         </ol>
-        <button 
+        <button
           onClick={() => window.location.href = `https://metamask.app.link/browser/${encodeURIComponent(window.location.href)}`}
           className="action-btn"
         >

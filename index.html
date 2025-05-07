@@ -1,26 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- CSP Policy -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy" content=" 
     default-src 'self'; 
-    script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net https://*.ethers.org https://*.ethers.io https://*.metamask.io; 
+    script-src 'self' https://cdn.jsdelivr.net https://*.ethers.org https://*.ethers.io https://*.metamask.io; 
     connect-src *; 
     style-src 'self' 'unsafe-inline'; 
     img-src * data:;">
   <title>Somnia Card Game</title>
-  <!-- Указываем правильный путь к иконке -->
   <link rel="icon" href="favicon.ico" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div id="root"></div>
-
-  <!-- Подключаем ethers.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
-  
-  <!-- Подключаем твой app.js -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
