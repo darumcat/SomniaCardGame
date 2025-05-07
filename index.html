@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy" content=" 
     default-src 'self'; 
-    script-src 'self' https://cdn.jsdelivr.net https://*.ethers.org https://*.ethers.io https://*.metamask.io; 
+    script-src 'self' https://cdn.jsdelivr.net https://*.ethers.org https://*.ethers.io https://*.metamask.io https://unpkg.com; 
     connect-src *; 
     style-src 'self' 'unsafe-inline'; 
     img-src * data:;">
@@ -15,7 +15,18 @@
 </head>
 <body>
   <div id="root"></div>
+
+  <!-- ethers.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
-  <script type="module" src="app.js"></script>
+
+  <!-- React + ReactDOM UMD -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Babel (для JSX в браузере) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Твой app.js -->
+  <script type="text/babel" src="app.js"></script>
 </body>
 </html>

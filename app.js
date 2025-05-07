@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
-import './styles.css'; // Подключение основного стиля
+const { useState, useEffect } = React;
 
-const App = () => {
+function App() {
   const [account, setAccount] = useState('');
   const [isSomniaNetwork, setIsSomniaNetwork] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -20,12 +19,10 @@ const App = () => {
         if (isMobile) {
           const wcUrl = `https://metamask.app.link/wc?uri=${encodeURIComponent(`https://${window.location.hostname}/connect`)}`;
           const classicUrl = `https://metamask.app.link/browser/${encodeURIComponent(`${window.location.origin}?metamask_redirect=true`)}`;
-
           window.location.href = wcUrl;
           setTimeout(() => {
             if (!document.hidden) window.location.href = classicUrl;
           }, 1000);
-
           return;
         }
         alert('Please install MetaMask!');
@@ -90,13 +87,13 @@ const App = () => {
 
   return (
     <div className="app">
-      <Header account={account} connectWallet={connectWallet} />
-      {!isSomniaNetwork && <NetworkAlert />}
-      <div className="dashboard">
-        {/* Здесь компоненты для игры */}
-      </div>
+      <h1>Somnia Card Game</h1>
+      <button onClick={connectWallet}>
+        {account ? `Connected: ${account.slice(0, 6)}...` : 'Connect Wallet'}
+      </button>
+      {!isSomniaNetwork && <p style={{ color: 'red' }}>Please switch to Somnia Testnet</p>}
     </div>
   );
-};
+}
 
-export default App;
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
