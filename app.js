@@ -1,130 +1,106 @@
-async function loadABI(fileName) {
-  try {
-    const response = await fetch(`abi/${fileName}`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    if (!data.abi) throw new Error(`ABI field missing in ${fileName}`);
-    return data.abi;
-  } catch (error) {
-    console.error(`Failed to load ABI (${fileName}):`, error);
-    showError(`Ошибка загрузки ABI (${fileName}): ${error.message}`);
-    return null;
-  }
-}
+import { useEffect, useState } from 'react';
+import './styles/globals.css'; // Стиль
 
-function showError(message) {
-  const errorDiv = document.getElementById('error-message') || createErrorElement();
-  errorDiv.textContent = message;
-  errorDiv.style.display = 'block';
-  setTimeout(() => errorDiv.style.display = 'none', 5000);
-}
+const App = () => {
+  const [account, setAccount] = useState('');
+  const [isSomniaNetwork, setIsSomniaNetwork] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showMobileGuide, setShowMobileGuide] = useState(false);
 
-function createErrorElement() {
-  const div = document.createElement('div');
-  div.id = 'error-message';
-  div.style = `
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    padding: 15px;
-    background: #ff4444;
-    color: white;
-    border-radius: 5px;
-    display: none;
-    z-index: 1000;
-  `;
-  document.body.appendChild(div);
-  return div;
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-  const [nftAbi, usdcardAbi, gameAbi] = await Promise.all([
-    loadABI('NFT.json'),
-    loadABI('USDCard.json'),
-    loadABI('CardGame.json')
-  ]);
-
-  if (!nftAbi || !usdcardAbi || !gameAbi) {
-    return showError('Не удалось загрузить данные контрактов. Обновите страницу.');
-  }
-
-  const CONTRACTS = {
-    NFT: {
-      address: "0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641",
-      abi: nftAbi
-    },
-    USDCard: {
-      address: "0x14A21748e5E9Da6B0d413256E3ae80ABEBd8CC80",
-      abi: usdcardAbi
-    },
-    CardGame: {
-      address: "0x566aaC422C630CE3c093CD2C13C5B3EceCe0D512",
-      abi: gameAbi
+  const checkNetwork = async () => {
+    if (window.ethereum) {
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      setIsSomniaNetwork(chainId === '0xc488'); // Это адрес сети Somnia Testnet
     }
   };
 
-  let provider, signer, nftContract, usdcardContract, gameContract;
-
-  document.getElementById('connectWallet').addEventListener('click', async () => {
-    if (!window.ethereum) {
-      return showError('Установите MetaMask! https://metamask.io');
-    }
-
+  const connectWallet = async () => {
     try {
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      const accounts = await provider.send("eth_requestAccounts", []);
-      signer = provider.getSigner();
+      if (!window.ethereum) {
+        if (isMobile) {
+          // Пробуем оба метода для максимальной совместимости
+          const wcUrl = `https://metamask.app.link/wc?uri=${encodeURIComponent(`https://${window.location.hostname}/connect`)}`;
+          const classicUrl = `https://metamask.app.link/browser/${encodeURIComponent(`${window.location.origin}?metamask_redirect=true`)}`;
+          
+          window.location.href = wcUrl;
+          
+          setTimeout(() => {
+            if (!document.hidden) {
+              window.location.href = classicUrl;
+            }
+          }, 1000);
 
-      const network = await provider.getNetwork();
-      if (network.chainId !== 12345) {
-        showError('Подключитесь к Somnia Testnet в MetaMask');
+          return;
+        }
+        alert('Please install MetaMask!');
         return;
       }
 
-      initContracts();
-      showError(`Кошелек подключен: ${accounts[0]}`);
+      // Подключаем MetaMask
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (accounts.length > 0) {
+        setAccount(accounts[0]);
+        await checkNetwork();
+      }
     } catch (error) {
-      console.error('Wallet connection error:', error);
-      showError(`Ошибка подключения: ${error.message}`);
+      console.error("Connection error:", error);
+      alert(`Connection failed: ${error.message}`);
     }
-  });
+  };
 
-  function initContracts() {
-    try {
-      nftContract = new ethers.Contract(CONTRACTS.NFT.address, CONTRACTS.NFT.abi, signer);
-      usdcardContract = new ethers.Contract(CONTRACTS.USDCard.address, CONTRACTS.USDCard.abi, signer);
-      gameContract = new ethers.Contract(CONTRACTS.CardGame.address, CONTRACTS.CardGame.abi, signer);
-    } catch (error) {
-      console.error('Contract init error:', error);
-      showError('Ошибка инициализации контрактов');
+  useEffect(() => {
+    const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobile(mobileCheck);
+
+    // Проверяем, если вернулся параметр из MetaMask
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('metamask_redirect') && window.ethereum) {
+      connectWallet();
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
+
+    checkNetwork();
+    
+    const handleAccountsChanged = (accounts) => {
+      setAccount(accounts.length > 0 ? accounts[0] : '');
+    };
+
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      return () => {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      };
+    }
+  }, []);
+
+  if (showMobileGuide) {
+    return (
+      <div className="mobile-guide">
+        <h2>Mobile Connection Guide</h2>
+        <ol>
+          <li>Open link in MetaMask browser</li>
+          <li>Refresh the page after opening</li>
+          <li>Click "Connect Wallet"</li>
+        </ol>
+        <button 
+          onClick={() => window.location.href = `https://metamask.app.link/browser/${encodeURIComponent(window.location.href)}`}
+          className="action-btn"
+        >
+          Open in MetaMask
+        </button>
+      </div>
+    );
   }
 
-  document.getElementById('mintNft').addEventListener('click', async () => {
-    if (!nftContract) return showError('Сначала подключите кошелек!');
+  return (
+    <div className="app">
+      <Header account={account} connectWallet={connectWallet} />
+      {!isSomniaNetwork && <NetworkAlert />}
+      <div className="dashboard">
+        {/* Здесь компоненты для игры */}
+      </div>
+    </div>
+  );
+};
 
-    try {
-      const tx = await nftContract.mint();
-      showError('Транзакция отправлена! Ожидайте подтверждения...');
-      const receipt = await tx.wait();
-      showError(`NFT успешно создан! Хэш: ${receipt.transactionHash}`);
-    } catch (error) {
-      console.error('Mint NFT error:', error);
-      showError(`Ошибка: ${error.message}`);
-    }
-  });
-
-  document.getElementById('mintUsdcard').addEventListener('click', async () => {
-    if (!usdcardContract) return showError('Сначала подключите кошелек!');
-
-    try {
-      const tx = await usdcardContract.mint();
-      showError('Транзакция отправлена! Ожидайте подтверждения...');
-      const receipt = await tx.wait();
-      showError(`10,000 USDCard зачислены! Хэш: ${receipt.transactionHash}`);
-    } catch (error) {
-      console.error('Mint USDCard error:', error);
-      showError(`Ошибка: ${error.message}`);
-    }
-  });
-});
+export default App;
