@@ -19,7 +19,7 @@ function Header({ account, isVerified }) {
 function NetworkAlert() {
   return (
     <div className="network-alert">
-      ⚠️ Пожалуйста, переключитесь на Somnia Testnet (ChainID: 0xc488)
+      ⚠️ Please switch to Somnia Testnet
     </div>
   );
 }
@@ -27,12 +27,12 @@ function NetworkAlert() {
 function VerificationMessage() {
   return (
     <div className="verification-message">
-      <h3>Требуется верификация кошелька</h3>
-      <p>Подпишите сообщение в MetaMask для подтверждения владения кошельком.</p>
+      <h3>Wallet Verification Required</h3>
+      <p>Sign the message in MetaMask to verify wallet ownership.</p>
       <ul>
-        <li>Без комиссии за газ</li>
-        <li>Используются только внутриигровые токены</li>
-        <li>Для тестовой сети могут потребоваться небольшие комиссии STT</li>
+        <li>No gas fees required</li>
+        <li>Only uses in-game tokens</li>
+        <li>Testnet may require minor STT gas fees</li>
       </ul>
     </div>
   );
@@ -41,14 +41,14 @@ function VerificationMessage() {
 function MintStatus({ hasMinted, isMinting, onMint, type }) {
   const messages = {
     NFT: {
-      minted: "NFT уже заминчена",
-      notMinted: "Нажмите чтобы заминтить NFT",
-      minting: "Минтинг NFT..."
+      minted: "NFT already minted",
+      notMinted: "Click to mint NFT",
+      minting: "Minting NFT..."
     },
     USDCard: {
-      minted: "USDCard уже заминчены",
-      notMinted: "Нажмите чтобы заминтить 10,000 USDCard",
-      minting: "Минтинг USDCard..."
+      minted: "USDCard already minted",
+      notMinted: "Click to mint 10,000 USDCard",
+      minting: "Minting USDCard..."
     }
   };
 
@@ -76,18 +76,18 @@ function App() {
   const [isMintingNFT, setIsMintingNFT] = useState(false);
   const [isMintingUSDCard, setIsMintingUSDCard] = useState(false);
 
-  // Адреса контрактов
+  // Contract addresses
   const NFT_CONTRACT_ADDRESS = "0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641";
   const USDCARD_CONTRACT_ADDRESS = "0x14A21748e5E9Da6B0d413256E3ae80ABEBd8CC80";
 
-  // Подключаемся к контрактам
+  // Connect to contracts
   const connectContracts = async () => {
     if (!window.ethereum) return;
 
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
 
-    // Импортируем ABI
+    // Import ABIs
     const nftAbi = await fetch('./abi/NFT.json').then(res => res.json());
     const usdcardAbi = await fetch('./abi/USDCard.json').then(res => res.json());
 
@@ -97,26 +97,26 @@ function App() {
     return { nftContract, usdcardContract };
   };
 
-  // Проверяем есть ли у пользователя NFT и USDCard
+  // Check user assets
   const checkUserAssets = async () => {
     if (!account) return;
 
     try {
       const { nftContract, usdcardContract } = await connectContracts();
       
-      // Проверяем NFT
+      // Check NFT
       const nftBalance = await nftContract.balanceOf(account);
       setHasNFT(nftBalance.gt(0));
       
-      // Проверяем USDCard
+      // Check USDCard
       const hasMintedUSDCard = await usdcardContract.hasMinted(account);
       setHasUSDCard(hasMintedUSDCard);
     } catch (error) {
-      console.error("Ошибка при проверке активов:", error);
+      console.error("Error checking assets:", error);
     }
   };
 
-  // Минтим NFT
+  // Mint NFT
   const mintNFT = async () => {
     setIsMintingNFT(true);
     try {
@@ -124,16 +124,16 @@ function App() {
       const tx = await nftContract.mint();
       await tx.wait();
       setHasNFT(true);
-      alert("NFT успешно заминчена!");
+      alert("NFT successfully minted!");
     } catch (error) {
-      console.error("Ошибка при минте NFT:", error);
-      alert("Ошибка при минте NFT: " + error.message);
+      console.error("Error minting NFT:", error);
+      alert("Error minting NFT: " + error.message);
     } finally {
       setIsMintingNFT(false);
     }
   };
 
-  // Минтим USDCard
+  // Mint USDCard
   const mintUSDCard = async () => {
     setIsMintingUSDCard(true);
     try {
@@ -141,10 +141,10 @@ function App() {
       const tx = await usdcardContract.mint();
       await tx.wait();
       setHasUSDCard(true);
-      alert("10,000 USDCard успешно заминчены!");
+      alert("10,000 USDCard successfully minted!");
     } catch (error) {
-      console.error("Ошибка при минте USDCard:", error);
-      alert("Ошибка при минте USDCard: " + error.message);
+      console.error("Error minting USDCard:", error);
+      alert("Error minting USDCard: " + error.message);
     } finally {
       setIsMintingUSDCard(false);
     }
@@ -163,11 +163,11 @@ function App() {
     setIsLoading(true);
     
     try {
-      const message = `Подпишите это сообщение для подтверждения владения кошельком.\n\n` +
-        `Это действие не требует комиссий за газ или токенов.\n` +
-        `Обратите внимание: только внутриигровые токены (созданные через этот сайт) будут использоваться для игровых транзакций.\n` +
-        `Также могут потребоваться небольшие комиссии тестовой сети (STT), необходимые для Somnia Testnet.\n\n` +
-        `Кошелек: ${account}\n` +
+      const message = `Sign this message to verify ownership of your wallet.\n\n` +
+        `This action will not cost any gas or tokens.\n` +
+        `Please note: Only in-game tokens (minted through this site) will be used for gameplay transactions.\n` +
+        `You may also encounter minor testnet gas fees (STT) required by the Somnia Testnet.\n\n` +
+        `Wallet: ${account}\n` +
         `Nonce: ${Math.floor(Math.random() * 10000)}`;
       
       await window.ethereum.request({
@@ -178,8 +178,8 @@ function App() {
       setIsVerified(true);
       await checkUserAssets();
     } catch (error) {
-      console.error('Ошибка верификации:', error);
-      alert('Верификация кошелька отменена');
+      console.error('Verification error:', error);
+      alert('Wallet verification cancelled');
     } finally {
       setIsLoading(false);
     }
@@ -188,7 +188,7 @@ function App() {
   const connectWallet = async () => {
     try {
       if (!window.ethereum) {
-        alert('Пожалуйста, установите расширение MetaMask');
+        alert('Please install MetaMask extension');
         return;
       }
 
@@ -199,8 +199,8 @@ function App() {
       setAccount(accounts[0]);
       await checkNetwork();
     } catch (error) {
-      console.error('Ошибка подключения:', error);
-      alert(`Не удалось подключиться: ${error.message}`);
+      console.error('Connection error:', error);
+      alert(`Failed to connect: ${error.message}`);
     }
   };
 
@@ -233,7 +233,7 @@ function App() {
         {!account ? (
           <div className="connect-section">
             <button className="connect-btn" onClick={connectWallet}>
-              Подключить MetaMask
+              Connect MetaMask
             </button>
             <VerificationMessage />
           </div>
@@ -245,12 +245,12 @@ function App() {
               onClick={verifyWallet}
               disabled={isLoading}
             >
-              {isLoading ? 'Ожидание подписи...' : 'Подтвердить кошелек'}
+              {isLoading ? 'Waiting for Signature...' : 'Verify Wallet'}
             </button>
           </div>
         ) : (
           <div className="game-section">
-            <h2>Добро пожаловать в Somnia Card Game</h2>
+            <h2>Welcome to Somnia Card Game</h2>
             <div className="action-buttons">
               <MintStatus 
                 hasMinted={hasNFT}
