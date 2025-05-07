@@ -19,18 +19,31 @@ function App() {
         if (isMobile) {
           const wcUrl = `https://metamask.app.link/wc?uri=${encodeURIComponent(`https://${window.location.hostname}/connect`)}`;
           const classicUrl = `https://metamask.app.link/browser/${encodeURIComponent(`${window.location.origin}?metamask_redirect=true`)}`;
+          
           window.location.href = wcUrl;
+  
           setTimeout(() => {
-            if (!document.hidden) window.location.href = classicUrl;
+            if (!document.hidden) {
+              window.location.href = classicUrl;
+            }
           }, 1000);
           return;
         }
         alert('Please install MetaMask!');
         return;
       }
-
+  
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       if (accounts.length > 0) {
+        const signerMessage = `Sign this message to verify ownership of your wallet.
+  This action will not cost any gas or tokens.
+  Please note: Only in-game tokens (minted through this site) will be used for gameplay transactions.
+  You may also encounter minor testnet gas fees (STT) required by the Somnia Testnet.`;
+  
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        await signer.signMessage(signerMessage);
+  
         setAccount(accounts[0]);
         await checkNetwork();
       }
@@ -39,6 +52,8 @@ function App() {
       alert(`Connection failed: ${error.message}`);
     }
   };
+  
+  
 
   useEffect(() => {
     const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
