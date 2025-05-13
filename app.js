@@ -1,7 +1,7 @@
 const { useState, useEffect } = React;
 
 // Константы
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7pB5CaZQOpCqSDVeyYLCXL8Si3KaBsbEFKf1Dlco3rIN7HuHZkj5jblDJAps2cRvyrw";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7pB5CaZQOpCqSDVeyYLCXL8Si3KaBsbEFKf1Dlco3rIN7HuHZkj5jblDJAps2cRvyrw/exec";
 const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I";
 const NFT_CONTRACT_ADDRESS = "0xdE3252Ba19C00Cb75c205b0e4835312dF0e8bdDF";
 const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
@@ -207,20 +207,30 @@ function App() {
   };
 
   const updateLeaderboard = async (address, balance) => {
-    if (address.toLowerCase() === ADMIN_ADDRESS.toLowerCase()) {
+    if (!address || address.toLowerCase() === ADMIN_ADDRESS.toLowerCase()) {
       return { status: "skipped" };
     }
-
+  
     try {
       const response = await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address, balance }),
+        body: JSON.stringify({ 
+          address: address.toLowerCase(), // нормализуем адрес
+          balance: parseFloat(balance) // убедимся, что это число
+        }),
       });
-      return await response.json();
+      
+      if (!response.ok) throw new Error('Network response was not ok');
+      
+      const result = await response.json();
+      if (result.status !== 'success') {
+        console.error('Leaderboard update failed:', result);
+      }
+      return result;
     } catch (error) {
       console.error('Leaderboard update failed:', error);
-      return { status: 'error' };
+      return { status: 'error', message: error.message };
     }
   };
 
@@ -284,28 +294,37 @@ function App() {
 
   const handleMint = async (assetType) => {
     if (!account) return;
-
+  
     try {
-      if (assetType === 'NFT') {
-        setNftStatus(prev => ({ ...prev, isProcessing: true }));
-      } else {
-        setUsdcardStatus(prev => ({ ...prev, isProcessing: true }));
-      }
-
       const contracts = await getContracts();
       if (!contracts) return;
-
+  
       if (assetType === 'NFT') {
+        // Проверяем перед минтом
+        const hasMinted = await contracts.nftContract.hasMinted(account);
+        if (hasMinted) {
+          setNftStatus({ isMinted: true, isProcessing: false });
+          return alert("You've already minted NFT");
+        }
+        
+        setNftStatus(prev => ({ ...prev, isProcessing: true }));
         const tx = await contracts.nftContract.mint();
         await tx.wait();
         setNftStatus({ isMinted: true, isProcessing: false });
         alert("NFT successfully minted!");
       } else if (assetType === 'USDCard') {
+        // Проверяем перед минтом
+        const hasMinted = await contracts.usdcardContract.hasMinted(account);
+        if (hasMinted) {
+          setUsdcardStatus({ isMinted: true, isProcessing: false });
+          return alert("You've already minted USDCard");
+        }
+        
+        setUsdcardStatus(prev => ({ ...prev, isProcessing: true }));
         const tx = await contracts.usdcardContract.mint();
         await tx.wait();
         setUsdcardStatus({ isMinted: true, isProcessing: false });
         
-        // Обновляем лидерборд после минта
         const balance = await contracts.usdcardContract.balanceOf(account);
         await updateLeaderboard(account, ethers.utils.formatUnits(balance, 18));
         alert("10,000 USDCard successfully minted!");
@@ -319,7 +338,7 @@ function App() {
         setUsdcardStatus(prev => ({ ...prev, isProcessing: false }));
       }
     }
-  }; 
+  };
 
 const connectWallet = async () => {
     try {
