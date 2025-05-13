@@ -3,7 +3,7 @@ const { useState, useEffect } = React;
 // Константы
 const GOOGLE_SCRIPT_URL = "https://docs.google.com/spreadsheets/d/174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I";
 const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I";
-const NFT_CONTRACT_ADDRESS = "0xF83B0C394226c9Aa974e6D1cD62Bc1ABC062F81d";
+const NFT_CONTRACT_ADDRESS = "0xdE3252Ba19C00Cb75c205b0e4835312dF0e8bdDF";
 const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
 const ADMIN_ADDRESS = "0x32B26a75Deaf84ACf1e5F67CB680FAD9fb2C783a"; // Замените на ваш адрес
 
