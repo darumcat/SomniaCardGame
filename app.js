@@ -1,8 +1,11 @@
 const { useState, useEffect } = React;
 
-// Константы для Google Sheets
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa2Vw6m5QX2R4dM9rBSMEwa9Otr8wStI8vr_cyo_10vwXrsB60LViGHq8tcpYxQV6VJg/exec";
-const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I"; // Замените на ваш ID таблицы
+// Константы
+const GOOGLE_SCRIPT_URL = "https://docs.google.com/spreadsheets/d/174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I/edit?gid=0#gid=0";
+const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I";
+const NFT_CONTRACT_ADDRESS = "0xF83B0C394226c9Aa974e6D1cD62Bc1ABC062F81d";
+const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
+const ADMIN_ADDRESS = "0x32B26a75Deaf84ACf1e5F67CB680FAD9fb2C783a"; // Замените на ваш адрес
 
 function Header({ account, isVerified }) {
   return (
@@ -81,7 +84,7 @@ function AddTokenButton() {
         params: {
           type: 'ERC20',
           options: {
-            address: '0x6B50Dd99609b7C7790fA41E3050eBEBB3aF2d213',
+            address: USDCARD_CONTRACT_ADDRESS,
             symbol: 'USDCD',
             decimals: 18,
             image: 'https://pink-defiant-koi-687.mypinata.cloud/ipfs/bafkreiggz5q3jc3qgc2fcuik7apeha3u3m4jesbegdzi76iskyozao4o4a',
@@ -102,113 +105,65 @@ function AddTokenButton() {
   );
 }
 
-function Leaderboard({ players, userAddress, userBalance }) {
+function LeaderboardScreen({ players, onBackClick, onRefresh }) {
   const formatAddress = (addr) => 
     addr.length > 10 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
 
   return (
-    <div className="leaderboard">
-      <h3>Top Players</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Rank</th>
-            <th>USDCard</th>
-            <th>Address</th>
-          </tr>
-        </thead>
-        <tbody>
-          {players.map((player, index) => (
-            <tr key={index} className={player.address === userAddress ? 'highlight' : ''}>
-              <td>{index + 1}</td>
-              <td>{player.balance}</td>
-              <td>{formatAddress(player.address)}</td>
+    <div className="leaderboard-screen">
+      <div className="leaderboard-header">
+        <button className="back-btn" onClick={onBackClick}>
+          ← Back to Game
+        </button>
+        <h2>Top 100 Players</h2>
+        <button className="refresh-btn" onClick={onRefresh}>
+          Refresh
+        </button>
+      </div>
+      
+      <div className="leaderboard-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>USDCard</th>
+              <th>Address</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      {userBalance !== null && (
-        <div className="user-position">
-          <p>Your balance: {userBalance} USDCD</p>
-        </div>
-      )}
+          </thead>
+          <tbody>
+            {players.map((player, index) => (
+              <tr key={index}>
+                <td>{index + 1}</td>
+                <td>{player.balance.toLocaleString()}</td>
+                <td>{formatAddress(player.address)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
-function GameSection({ account, contracts }) {
-  const [players, setPlayers] = useState([]);
-  const [userBalance, setUserBalance] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const updateGoogleSheet = async (address, balance) => {
-    try {
-      await fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address, balance })
-      });
-    } catch (error) {
-      console.error('Google Sheets error:', error);
-    }
-  };
-
-  const loadLeaderboard = async () => {
-    setIsLoading(true);
-    try {
-      const balance = await contracts.usdcardContract.balanceOf(account);
-      const formattedBalance = ethers.utils.formatUnits(balance, 18);
-      setUserBalance(formattedBalance);
-
-      await updateGoogleSheet(account, formattedBalance);
-
-      const response = await fetch(
-        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`
-      );
-      const text = await response.text();
-      const json = JSON.parse(text.substr(47).slice(0, -2));
-
-      const playersData = json.table.rows.map(row => ({
-        address: row.c[0].v,
-        balance: row.c[1].v
-      })).sort((a, b) => b.balance - a.balance);
-
-      setPlayers(playersData);
-    } catch (error) {
-      console.error('Error loading leaderboard:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (contracts) loadLeaderboard();
-  }, [contracts, account]);
-
+function GameSection({ account, contracts, onLeaderboardClick }) {
   return (
     <div className="game-section">
       <h2>Welcome to Somnia Card Game</h2>
       <div className="action-buttons">
         <AddTokenButton />
         <button 
-          className="action-btn"
-          onClick={loadLeaderboard}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Loading...' : 'Refresh Leaderboard'}
-        </button>
-        <button 
           className="action-btn play-btn"
           onClick={() => alert('Game "Durak" will start soon')}
         >
           Play Durak (10 USDCard fee)
         </button>
+        <button 
+          className="action-btn leaderboard-btn"
+          onClick={onLeaderboardClick}
+        >
+          View Leaderboard
+        </button>
       </div>
-      <Leaderboard 
-        players={players} 
-        userAddress={account} 
-        userBalance={userBalance}
-      />
     </div>
   );
 }
@@ -221,9 +176,8 @@ function App() {
   const [nftStatus, setNftStatus] = useState({ isMinted: false, isProcessing: false });
   const [usdcardStatus, setUsdcardStatus] = useState({ isMinted: false, isProcessing: false });
   const [contracts, setContracts] = useState(null);
-
-  const NFT_CONTRACT_ADDRESS = "0xF83B0C394226c9Aa974e6D1cD62Bc1ABC062F81d";
-  const USDCARD_CONTRACT_ADDRESS = "0x6B50Dd99609b7C7790fA41E3050eBEBB3aF2d213";
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [players, setPlayers] = useState([]);
 
   const getContracts = async () => {
     if (!window.ethereum) {
@@ -252,6 +206,51 @@ function App() {
     }
   };
 
+  const updateLeaderboard = async (address, balance) => {
+    if (address.toLowerCase() === ADMIN_ADDRESS.toLowerCase()) {
+      return { status: "skipped" };
+    }
+
+    try {
+      const response = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address, balance }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Leaderboard update failed:', error);
+      return { status: 'error' };
+    }
+  };
+
+  const loadLeaderboard = async () => {
+    setIsLoading(true);
+    try {
+      // Загружаем данные из Google Sheets
+      const response = await fetch(
+        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`
+      );
+      const text = await response.text();
+      const json = JSON.parse(text.substr(47).slice(0, -2));
+      
+      const playersData = json.table.rows
+        .map(row => ({
+          address: row.c[0].v,
+          balance: parseFloat(row.c[1].v)
+        }))
+        .filter(player => player.address.toLowerCase() !== ADMIN_ADDRESS.toLowerCase())
+        .sort((a, b) => b.balance - a.balance)
+        .slice(0, 100);
+
+      setPlayers(playersData);
+    } catch (error) {
+      console.error('Error loading leaderboard:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const checkAssetStatus = async () => {
     if (!account || !isVerified) return;
 
@@ -262,13 +261,20 @@ function App() {
       setNftStatus(prev => ({ ...prev, isProcessing: true }));
       setUsdcardStatus(prev => ({ ...prev, isProcessing: true }));
 
+      // Проверяем NFT
       const nftBalance = await contracts.nftContract.balanceOf(account);
       const hasMintedNFT = await contracts.nftContract.hasMinted(account);
       setNftStatus({ isMinted: nftBalance.gt(0) || hasMintedNFT, isProcessing: false });
 
+      // Проверяем USDCard
       const hasMintedUSDCard = await contracts.usdcardContract.hasMinted(account);
       setUsdcardStatus({ isMinted: hasMintedUSDCard, isProcessing: false });
 
+      // Обновляем баланс в лидерборде
+      if (hasMintedUSDCard) {
+        const balance = await contracts.usdcardContract.balanceOf(account);
+        await updateLeaderboard(account, ethers.utils.formatUnits(balance, 18));
+      }
     } catch (error) {
       console.error("Error checking assets:", error);
       setNftStatus(prev => ({ ...prev, isProcessing: false }));
@@ -298,6 +304,10 @@ function App() {
         const tx = await contracts.usdcardContract.mint();
         await tx.wait();
         setUsdcardStatus({ isMinted: true, isProcessing: false });
+        
+        // Обновляем лидерборд после минта
+        const balance = await contracts.usdcardContract.balanceOf(account);
+        await updateLeaderboard(account, ethers.utils.formatUnits(balance, 18));
         alert("10,000 USDCard successfully minted!");
       }
     } catch (error) {
@@ -309,16 +319,28 @@ function App() {
         setUsdcardStatus(prev => ({ ...prev, isProcessing: false }));
       }
     }
-  };
+  }; 
 
-  const checkNetwork = async () => {
-    if (window.ethereum) {
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      setIsCorrectNetwork(chainId === '0xc488');
+const connectWallet = async () => {
+    try {
+      if (!window.ethereum) {
+        alert('Please install MetaMask extension');
+        return;
+      }
+
+      const accounts = await window.ethereum.request({ 
+        method: 'eth_requestAccounts' 
+      });
+
+      setAccount(accounts[0]);
+      await checkNetwork();
+    } catch (error) {
+      console.error('Connection error:', error);
+      alert(`Failed to connect: ${error.message}`);
     }
   };
 
-  const verifyWallet = async () => {
+const verifyWallet = async () => {
     if (!account) return;
 
     setIsLoading(true);
@@ -345,50 +367,34 @@ function App() {
     }
   };
 
-  const connectWallet = async () => {
-    try {
-      if (!window.ethereum) {
-        alert('Please install MetaMask extension');
-        return;
-      }
-
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      });
-
-      setAccount(accounts[0]);
-      await checkNetwork();
-    } catch (error) {
-      console.error('Connection error:', error);
-      alert(`Failed to connect: ${error.message}`);
+const checkNetwork = async () => {
+    if (window.ethereum) {
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      setIsCorrectNetwork(chainId === '0xc488');
     }
   };
 
-  useEffect(() => {
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', async (accounts) => {
-        setAccount(accounts[0] || '');
-        setIsVerified(false);
-        setNftStatus({ isMinted: false, isProcessing: false });
-        setUsdcardStatus({ isMinted: false, isProcessing: false });
+useEffect(() => {
+    if (contracts && isVerified) {
+      // Подписываемся на события изменения баланса
+      contracts.usdcardContract.on("BalanceChanged", (user, balance) => {
+        if (user.toLowerCase() !== ADMIN_ADDRESS.toLowerCase()) {
+          updateLeaderboard(user, ethers.utils.formatUnits(balance, 18));
+        }
       });
 
-      window.ethereum.on('chainChanged', () => {
-        window.location.reload();
-      });
-
-      if (account && isVerified) {
-        checkAssetStatus();
-      }
+      return () => {
+        contracts.usdcardContract.removeAllListeners("BalanceChanged");
+      };
     }
-  }, [account, isVerified]);
+  }, [contracts, isVerified]);
 
   return (
     <div className="app-container">
       <Header account={account} isVerified={isVerified} />
-
+      
       {!isCorrectNetwork && <NetworkAlert />}
-
+      
       <div className="main-content">
         {!account ? (
           <div className="connect-section">
@@ -408,6 +414,12 @@ function App() {
               {isLoading ? 'Waiting for Signature...' : 'Verify Wallet'}
             </button>
           </div>
+        ) : showLeaderboard ? (
+          <LeaderboardScreen 
+            players={players} 
+            onBackClick={() => setShowLeaderboard(false)}
+            onRefresh={loadLeaderboard}
+          />
         ) : (
           <>
             <div className="mint-section">
@@ -424,7 +436,14 @@ function App() {
                 onClick={() => handleMint('USDCard')}
               />
             </div>
-            <GameSection account={account} contracts={contracts} />
+            <GameSection 
+              account={account} 
+              contracts={contracts} 
+              onLeaderboardClick={() => {
+                loadLeaderboard();
+                setShowLeaderboard(true);
+              }}
+            />
           </>
         )}
       </div>
