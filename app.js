@@ -1,11 +1,11 @@
 const { useState, useEffect } = React;
 
 // Константы
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzJ1CzVokxWY7OCJMZN_hMVxef3hfwsSKf_9h64nlauNepQL6H8yI6rD8C1FxlDkUjzw/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMcgR0ZCUK6V4MycfcO0JvK82b7e20oOHGYOgR1B7nALGgfouRAt1KtMohBhoqpVa_1Q/exec";
 const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I";
 const NFT_CONTRACT_ADDRESS = "0xdE3252Ba19C00Cb75c205b0e4835312dF0e8bdDF";
 const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
-const ADMIN_ADDRESS = "0x32B26a75Deaf84ACf1e5F67CB680FAD9fb2C783a"; // Замените на ваш адрес
+const ADMIN_ADDRESS = "0x32B26a75Deaf84ACf1e5F67CB680FAD9fb2C783a";
 
 function Header({ account, isVerified }) {
   return (
@@ -105,7 +105,7 @@ function AddTokenButton() {
   );
 }
 
-function LeaderboardScreen({ players, onBackClick, onRefresh }) {
+function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
   const formatAddress = (addr) => 
     addr.length > 10 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
 
@@ -132,7 +132,7 @@ function LeaderboardScreen({ players, onBackClick, onRefresh }) {
           </thead>
           <tbody>
             {players.map((player, index) => (
-              <tr key={index}>
+              <tr key={index} className={player.address.toLowerCase() === account?.toLowerCase() ? 'highlight' : ''}>
                 <td>{index + 1}</td>
                 <td>{player.balance.toLocaleString()}</td>
                 <td>{formatAddress(player.address)}</td>
@@ -224,7 +224,6 @@ function App() {
   
       const response = await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors', // Попробуйте с этим параметром
         headers: { 
           'Content-Type': 'application/json',
         },
@@ -251,17 +250,25 @@ function App() {
   const loadLeaderboard = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(GOOGLE_SCRIPT_URL + '?action=getLeaderboard');
+      // Сначала обновляем баланс текущего пользователя
+      if (account && contracts) {
+        const balance = await contracts.usdcardContract.balanceOf(account);
+        const formattedBalance = ethers.utils.formatUnits(balance, 18);
+        await updateLeaderboard(account, formattedBalance);
+      }
+
+      // Затем загружаем обновленный лидерборд
+      const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getLeaderboard`);
       if (!response.ok) throw new Error('Network response was not ok');
-  
+
       const data = await response.json();
-  
-      // Фильтруем и сортируем данные, если это нужно
+
+      // Фильтруем и сортируем данные
       const playersData = data
         .filter(player => player.address.toLowerCase() !== ADMIN_ADDRESS.toLowerCase())
         .sort((a, b) => b.balance - a.balance)
         .slice(0, 100);
-  
+
       setPlayers(playersData);
     } catch (error) {
       console.error('Error loading leaderboard:', error);
@@ -270,7 +277,6 @@ function App() {
       setIsLoading(false);
     }
   };
-  
 
   const checkAssetStatus = async () => {
     if (!account || !isVerified) return;
@@ -311,7 +317,6 @@ function App() {
       if (!contracts) return;
   
       if (assetType === 'NFT') {
-        // Проверяем перед минтом
         const hasMinted = await contracts.nftContract.hasMinted(account);
         if (hasMinted) {
           setNftStatus({ isMinted: true, isProcessing: false });
@@ -324,7 +329,6 @@ function App() {
         setNftStatus({ isMinted: true, isProcessing: false });
         alert("NFT successfully minted!");
       } else if (assetType === 'USDCard') {
-        // Проверяем перед минтом
         const hasMinted = await contracts.usdcardContract.hasMinted(account);
         if (hasMinted) {
           setUsdcardStatus({ isMinted: true, isProcessing: false });
@@ -338,8 +342,6 @@ function App() {
   
         const balance = await contracts.usdcardContract.balanceOf(account);
         const formattedBalance = ethers.utils.formatUnits(balance, 18);
-        console.log("Mint complete, balance to update:", formattedBalance);
-  
         await updateLeaderboard(account, formattedBalance);
         alert("10,000 USDCard successfully minted!");
       }
@@ -354,7 +356,7 @@ function App() {
     }
   };
 
-const connectWallet = async () => {
+  const connectWallet = async () => {
     try {
       if (!window.ethereum) {
         alert('Please install MetaMask extension');
@@ -373,7 +375,7 @@ const connectWallet = async () => {
     }
   };
 
-const verifyWallet = async () => {
+  const verifyWallet = async () => {
     if (!account) return;
 
     setIsLoading(true);
@@ -400,16 +402,15 @@ const verifyWallet = async () => {
     }
   };
 
-const checkNetwork = async () => {
+  const checkNetwork = async () => {
     if (window.ethereum) {
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
       setIsCorrectNetwork(chainId === '0xc488');
     }
   };
 
-useEffect(() => {
+  useEffect(() => {
     if (contracts && isVerified) {
-      // Подписываемся на события изменения баланса
       contracts.usdcardContract.on("BalanceChanged", (user, balance) => {
         if (user.toLowerCase() !== ADMIN_ADDRESS.toLowerCase()) {
           updateLeaderboard(user, ethers.utils.formatUnits(balance, 18));
@@ -452,6 +453,7 @@ useEffect(() => {
             players={players} 
             onBackClick={() => setShowLeaderboard(false)}
             onRefresh={loadLeaderboard}
+            account={account}
           />
         ) : (
           <>
