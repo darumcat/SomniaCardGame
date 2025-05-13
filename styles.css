@@ -211,3 +211,36 @@ header h1 {
     margin: 10px 0;
   }
 }
+
+/* стиль для таблицы */
+
+.leaderboard {
+  max-height: 500px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.leaderboard table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard th {
+  position: sticky;
+  top: 0;
+  background: rgba(0, 219, 222, 0.3);
+  padding: 12px;
+  text-align: left;
+  backdrop-filter: blur(5px);
+}
+
+.leaderboard tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.leaderboard tr.highlight {
+  background: rgba(0, 219, 222, 0.15) !important;
+}

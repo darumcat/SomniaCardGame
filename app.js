@@ -1,7 +1,7 @@
 const { useState, useEffect } = React;
 
 // Константы для Google Sheets
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzQo-85zxt_uqXC1U6E8q78PLaa9PlqMuEkZuvBatPM1Xm7Zu_OmZftk92FEwoQgy4nLQ/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa2Vw6m5QX2R4dM9rBSMEwa9Otr8wStI8vr_cyo_10vwXrsB60LViGHq8tcpYxQV6VJg/exec";
 const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I"; // Замените на ваш ID таблицы
 
 function Header({ account, isVerified }) {
