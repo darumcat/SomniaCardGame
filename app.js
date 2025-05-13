@@ -1,7 +1,7 @@
 const { useState, useEffect } = React;
 
 // Константы
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyjZRSE3t-WG66BHtBz1LrS7gunkiIOCn2_SuKc5mh9QvYUHL_0AfK5Ij_QjbPyNMOFow/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbww1aZoAnZx1HvaE33VW7N9MYyUevH_bmrhIBiu7SBunthR93Q58oeRDnbcnLyvfumiHg/exec";
 const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I";
 const NFT_CONTRACT_ADDRESS = "0xdE3252Ba19C00Cb75c205b0e4835312dF0e8bdDF";
 const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
@@ -222,52 +222,104 @@ function App() {
   
       console.log("Sending payload:", payload);
   
-      // Используем mode: 'no-cors' для POST-запроса
-      const response = await fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors', // Важно для обхода CORS
-        headers: { 
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-  
-      // В режиме no-cors мы не получим response.json(), но запрос пройдет
-      console.log("Request sent (no-cors mode)");
-      return { status: "success" };
-  
+      // Пробуем стандартный запрос с обработкой CORS
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log("Update successful (standard mode):", result);
+          return result;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      } catch (standardError) {
+        console.warn("Standard POST failed, trying no-cors:", standardError);
+        
+        // Fallback: no-cors режим
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        console.log("Request sent (no-cors fallback mode)");
+        return { status: "success_no_cors" };
+      }
     } catch (error) {
       console.error('Leaderboard update failed:', error);
-      return { status: 'error', message: error.message };
+      return { 
+        status: 'error', 
+        message: error.message,
+        details: error.stack 
+      };
     }
   };
 
   const loadLeaderboard = async () => {
     setIsLoading(true);
     try {
-      // Сначала обновляем баланс текущего пользователя
+      // 1. Сначала обновляем баланс текущего пользователя (если он подключен)
       if (account && contracts) {
-        const balance = await contracts.usdcardContract.balanceOf(account);
-        const formattedBalance = ethers.utils.formatUnits(balance, 18);
-        await updateLeaderboard(account, formattedBalance);
+        try {
+          const balance = await contracts.usdcardContract.balanceOf(account);
+          const formattedBalance = ethers.utils.formatUnits(balance, 18);
+          await updateLeaderboard(account, formattedBalance);
+        } catch (updateError) {
+          console.warn("Failed to update user balance:", updateError);
+          // Продолжаем загрузку даже если обновление не удалось
+        }
       }
-
-      // Затем загружаем обновленный лидерборд
-      const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getLeaderboard`);
-      if (!response.ok) throw new Error('Network response was not ok');
-
+  
+      // 2. Загружаем лидерборд с прокси-параметром для CORS
+      const timestamp = Date.now(); // Добавляем timestamp чтобы избежать кеширования
+      const leaderboardUrl = `${GOOGLE_SCRIPT_URL}?action=getLeaderboard&t=${timestamp}`;
+      
+      const response = await fetch(leaderboardUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-cache'
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
       const data = await response.json();
-
-      // Фильтруем и сортируем данные
-      const playersData = data
-        .filter(player => player.address.toLowerCase() !== ADMIN_ADDRESS.toLowerCase())
+  
+      // 3. Обрабатываем данные
+      const playersData = (Array.isArray(data) ? data : [])
+        .filter(player => 
+          player.address && 
+          player.address.toLowerCase() !== ADMIN_ADDRESS.toLowerCase() && 
+          !isNaN(player.balance)
+        )
         .sort((a, b) => b.balance - a.balance)
         .slice(0, 100);
-
+  
       setPlayers(playersData);
     } catch (error) {
       console.error('Error loading leaderboard:', error);
-      alert('Failed to load leaderboard: ' + error.message);
+      
+      // Показываем пользователю понятное сообщение
+      let errorMessage = 'Failed to load leaderboard';
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage += ' - Network error. Please check your connection.';
+      } else {
+        errorMessage += `: ${error.message}`;
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
