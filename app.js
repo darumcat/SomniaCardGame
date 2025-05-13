@@ -1,7 +1,7 @@
 const { useState, useEffect } = React;
 
 // Константы
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7pB5CaZQOpCqSDVeyYLCXL8Si3KaBsbEFKf1Dlco3rIN7HuHZkj5jblDJAps2cRvyrw/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyUU_2m1VOfLJrG79GHB95XQkCdC7j83bqe53RYwhKRuEtSF8Rr_h0WHLjAPfcLKh0nKg/exec";
 const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I";
 const NFT_CONTRACT_ADDRESS = "0xdE3252Ba19C00Cb75c205b0e4835312dF0e8bdDF";
 const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
@@ -237,29 +237,26 @@ function App() {
   const loadLeaderboard = async () => {
     setIsLoading(true);
     try {
-      // Загружаем данные из Google Sheets
-      const response = await fetch(
-        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`
-      );
-      const text = await response.text();
-      const json = JSON.parse(text.substr(47).slice(0, -2));
-      
-      const playersData = json.table.rows
-        .map(row => ({
-          address: row.c[0].v,
-          balance: parseFloat(row.c[1].v)
-        }))
+      const response = await fetch(GOOGLE_SCRIPT_URL + '?action=getLeaderboard');
+      if (!response.ok) throw new Error('Network response was not ok');
+  
+      const data = await response.json();
+  
+      // Фильтруем и сортируем данные, если это нужно
+      const playersData = data
         .filter(player => player.address.toLowerCase() !== ADMIN_ADDRESS.toLowerCase())
         .sort((a, b) => b.balance - a.balance)
         .slice(0, 100);
-
+  
       setPlayers(playersData);
     } catch (error) {
       console.error('Error loading leaderboard:', error);
+      alert('Failed to load leaderboard: ' + error.message);
     } finally {
       setIsLoading(false);
     }
   };
+  
 
   const checkAssetStatus = async () => {
     if (!account || !isVerified) return;
