@@ -1,7 +1,7 @@
 const { useState, useEffect } = React;
 
 // Константы
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5vUTmlC5Q4klj5y4rH3I_S1Zm-ia8BKKRdegWhxbTHuR98lJMngnnD3L-8s9Ez36WDg/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzmRrF9NvcSgcNCAB_i2u8Xrt6qyzLBOZY69zgFh6xFvffFFaA1fx1eYp6AcjMc7mi8Ug/exec";
 const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I";
 const NFT_CONTRACT_ADDRESS = "0xdE3252Ba19C00Cb75c205b0e4835312dF0e8bdDF";
 const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
