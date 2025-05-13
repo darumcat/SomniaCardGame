@@ -77,11 +77,9 @@ function App() {
   const [nftStatus, setNftStatus] = useState({ isMinted: false, isProcessing: false });
   const [usdcardStatus, setUsdcardStatus] = useState({ isMinted: false, isProcessing: false });
 
-  // Contract addresses
-  const NFT_CONTRACT_ADDRESS = "0x6C6506d9587e3EA5bbfD8278bF0c237dd64eD641";
-  const USDCARD_CONTRACT_ADDRESS = "0x14A21748e5E9Da6B0d413256E3ae80ABEBd8CC80";
+  const NFT_CONTRACT_ADDRESS = "0xF83B0C394226c9Aa974e6D1cD62Bc1ABC062F81d";
+  const USDCARD_CONTRACT_ADDRESS = "0x6B50Dd99609b7C7790fA41E3050eBEBB3aF2d213";
 
-  // Connect to contracts
   const getContracts = async () => {
     if (!window.ethereum) {
       alert('Please install MetaMask');
@@ -92,7 +90,6 @@ function App() {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
 
-      // Import ABIs
       const nftAbi = await fetch('./abi/NFT.json').then(res => res.json());
       const usdcardAbi = await fetch('./abi/USDCard.json').then(res => res.json());
 
@@ -107,7 +104,6 @@ function App() {
     }
   };
 
-  // Check asset status
   const checkAssetStatus = async () => {
     if (!account || !isVerified) return;
 
@@ -115,25 +111,29 @@ function App() {
       const contracts = await getContracts();
       if (!contracts) return;
 
+      setNftStatus(prev => ({ ...prev, isProcessing: true }));
+      setUsdcardStatus(prev => ({ ...prev, isProcessing: true }));
+
       // Check NFT
       const nftBalance = await contracts.nftContract.balanceOf(account);
-      setNftStatus(prev => ({ ...prev, isMinted: nftBalance.gt(0) }));
+      const hasMintedNFT = await contracts.nftContract.hasMinted(account);
+      setNftStatus({ isMinted: nftBalance.gt(0) || hasMintedNFT, isProcessing: false });
 
       // Check USDCard
       const hasMintedUSDCard = await contracts.usdcardContract.hasMinted(account);
-      setUsdcardStatus(prev => ({ ...prev, isMinted: hasMintedUSDCard }));
+      setUsdcardStatus({ isMinted: hasMintedUSDCard, isProcessing: false });
 
     } catch (error) {
       console.error("Error checking assets:", error);
+      setNftStatus(prev => ({ ...prev, isProcessing: false }));
+      setUsdcardStatus(prev => ({ ...prev, isProcessing: false }));
     }
   };
 
-  // Handle minting
   const handleMint = async (assetType) => {
     if (!account) return;
 
     try {
-      // Set processing state
       if (assetType === 'NFT') {
         setNftStatus(prev => ({ ...prev, isProcessing: true }));
       } else {
@@ -144,39 +144,20 @@ function App() {
       if (!contracts) return;
 
       if (assetType === 'NFT') {
-        // Check NFT balance first
-        const balance = await contracts.nftContract.balanceOf(account);
-        if (balance.gt(0)) {
-          setNftStatus({ isMinted: true, isProcessing: false });
-          return;
-        }
-
-        // Mint NFT
         const tx = await contracts.nftContract.mint();
         await tx.wait();
         setNftStatus({ isMinted: true, isProcessing: false });
         alert("NFT successfully minted!");
-
       } else if (assetType === 'USDCard') {
-        // Check USDCard status first
-        const hasMinted = await contracts.usdcardContract.hasMinted(account);
-        if (hasMinted) {
-          setUsdcardStatus({ isMinted: true, isProcessing: false });
-          return;
-        }
-
-        // Mint USDCard
         const tx = await contracts.usdcardContract.mint();
         await tx.wait();
         setUsdcardStatus({ isMinted: true, isProcessing: false });
         alert("10,000 USDCard successfully minted!");
       }
-
     } catch (error) {
       console.error(`Error minting ${assetType}:`, error);
       alert(`Error: ${error.message}`);
       
-      // Reset processing state
       if (assetType === 'NFT') {
         setNftStatus(prev => ({ ...prev, isProcessing: false }));
       } else {
@@ -200,8 +181,7 @@ function App() {
     try {
       const message = `Sign this message to verify ownership of your wallet.\n\n` +
         `This action will not cost any gas or tokens.\n` +
-        `Please note: Only in-game tokens (minted through this site) will be used for gameplay transactions.\n` +
-        `You may also encounter minor testnet gas fees (STT) required by the Somnia Testnet.\n\n` +
+        `Please note: Only in-game tokens (minted through this site) will be used for gameplay transactions.\n\n` +
         `Wallet: ${account}\n` +
         `Nonce: ${Math.floor(Math.random() * 10000)}`;
       
