@@ -207,24 +207,39 @@ function App() {
   };
 
   const updateLeaderboard = async (address, balance) => {
-    console.log("Calling updateLeaderboard with:", address, balance);
-  
+    console.log("Attempting to update leaderboard:", { address, balance });
+    
     if (!address || address.toLowerCase() === ADMIN_ADDRESS.toLowerCase()) {
+      console.log("Skipped - admin address or empty address");
       return { status: "skipped" };
     }
   
     try {
+      const payload = { 
+        address: address.toLowerCase(),
+        balance: parseFloat(balance)
+      };
+  
+      console.log("Sending payload:", payload);
+  
       const response = await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          address: address.toLowerCase(),
-          balance: parseFloat(balance)
-        }),
+        mode: 'no-cors', // Попробуйте с этим параметром
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
   
-      if (!response.ok) throw new Error('Network response was not ok');
+      console.log("Response status:", response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, text: ${errorText}`);
+      }
+  
       const result = await response.json();
+      console.log("Update successful:", result);
       return result;
   
     } catch (error) {
