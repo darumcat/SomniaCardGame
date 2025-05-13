@@ -211,18 +211,20 @@ function App() {
       return { status: "skipped" };
     }
   
+    console.log("Calling updateLeaderboard with:", address, balance);
+  
     try {
       const response = await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           address: address.toLowerCase(), // нормализуем адрес
           balance: parseFloat(balance) // убедимся, что это число
         }),
       });
-      
+  
       if (!response.ok) throw new Error('Network response was not ok');
-      
+  
       const result = await response.json();
       if (result.status !== 'success') {
         console.error('Leaderboard update failed:', result);
@@ -303,7 +305,7 @@ function App() {
           setNftStatus({ isMinted: true, isProcessing: false });
           return alert("You've already minted NFT");
         }
-        
+  
         setNftStatus(prev => ({ ...prev, isProcessing: true }));
         const tx = await contracts.nftContract.mint();
         await tx.wait();
@@ -316,14 +318,17 @@ function App() {
           setUsdcardStatus({ isMinted: true, isProcessing: false });
           return alert("You've already minted USDCard");
         }
-        
+  
         setUsdcardStatus(prev => ({ ...prev, isProcessing: true }));
         const tx = await contracts.usdcardContract.mint();
         await tx.wait();
         setUsdcardStatus({ isMinted: true, isProcessing: false });
-        
+  
         const balance = await contracts.usdcardContract.balanceOf(account);
-        await updateLeaderboard(account, ethers.utils.formatUnits(balance, 18));
+        const formattedBalance = ethers.utils.formatUnits(balance, 18);
+        console.log("Mint complete, balance to update:", formattedBalance);
+  
+        await updateLeaderboard(account, formattedBalance);
         alert("10,000 USDCard successfully minted!");
       }
     } catch (error) {
