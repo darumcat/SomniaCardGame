@@ -1,7 +1,7 @@
 const { useState, useEffect } = React;
 
 // Константы
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbww1aZoAnZx1HvaE33VW7N9MYyUevH_bmrhIBiu7SBunthR93Q58oeRDnbcnLyvfumiHg/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5vUTmlC5Q4klj5y4rH3I_S1Zm-ia8BKKRdegWhxbTHuR98lJMngnnD3L-8s9Ez36WDg/exec";
 const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I";
 const NFT_CONTRACT_ADDRESS = "0xdE3252Ba19C00Cb75c205b0e4835312dF0e8bdDF";
 const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
@@ -208,7 +208,7 @@ function App() {
 
   const updateLeaderboard = async (address, balance) => {
     console.log("Attempting to update leaderboard:", { address, balance });
-    
+  
     if (!address || address.toLowerCase() === ADMIN_ADDRESS.toLowerCase()) {
       console.log("Skipped - admin address or empty address");
       return { status: "skipped" };
@@ -240,7 +240,7 @@ function App() {
         throw new Error(`HTTP error! status: ${response.status}`);
       } catch (standardError) {
         console.warn("Standard POST failed, trying no-cors:", standardError);
-        
+  
         // Fallback: no-cors режим
         await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
@@ -250,7 +250,7 @@ function App() {
           },
           body: JSON.stringify(payload),
         });
-        
+  
         console.log("Request sent (no-cors fallback mode)");
         return { status: "success_no_cors" };
       }
@@ -263,6 +263,7 @@ function App() {
       };
     }
   };
+  
 
   const loadLeaderboard = async () => {
     setIsLoading(true);
@@ -272,7 +273,7 @@ function App() {
         try {
           const balance = await contracts.usdcardContract.balanceOf(account);
           const formattedBalance = ethers.utils.formatUnits(balance, 18);
-          await updateLeaderboard(account, formattedBalance);
+          await updateLeaderboard(account, formattedBalance); // Обновляем лидерборд с новым балансом
         } catch (updateError) {
           console.warn("Failed to update user balance:", updateError);
           // Продолжаем загрузку даже если обновление не удалось
@@ -304,10 +305,10 @@ function App() {
           player.address.toLowerCase() !== ADMIN_ADDRESS.toLowerCase() && 
           !isNaN(player.balance)
         )
-        .sort((a, b) => b.balance - a.balance)
-        .slice(0, 100);
+        .sort((a, b) => b.balance - a.balance) // Сортируем по убыванию баланса
+        .slice(0, 100); // Ограничиваем количество игроков до 100
   
-      setPlayers(playersData);
+      setPlayers(playersData); // Обновляем состояние игроков
     } catch (error) {
       console.error('Error loading leaderboard:', error);
       
@@ -319,11 +320,12 @@ function App() {
         errorMessage += `: ${error.message}`;
       }
       
-      alert(errorMessage);
+      alert(errorMessage); // Показываем alert с ошибкой
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Завершаем процесс загрузки
     }
   };
+  
 
   const checkAssetStatus = async () => {
     if (!account || !isVerified) return;
