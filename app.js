@@ -2,11 +2,11 @@ const { useState, useEffect } = React;
 
 // Константы
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6xBJNPfKt8esaOj9Tu1H97dHQW76LUf1z8IOSzJQbouffJ5CnHiEuehvzSG8efGIR3g/exec";
-const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I";
 const NFT_CONTRACT_ADDRESS = "0xdE3252Ba19C00Cb75c205b0e4835312dF0e8bdDF";
 const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
 const ADMIN_ADDRESS = "0x32B26a75Deaf84ACf1e5F67CB680FAD9fb2C783a";
 
+// Компоненты
 function Header({ account, isVerified }) {
   return (
     <header>
@@ -178,10 +178,39 @@ function App() {
   const [contracts, setContracts] = useState(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [players, setPlayers] = useState([]);
+  const [error, setError] = useState(null);
+  const [nftAbi, setNftAbi] = useState(null);
+  const [usdcardAbi, setUsdcardAbi] = useState(null);
 
+  // 1. Загрузка ABI при монтировании
+  useEffect(() => {
+    const loadAbis = async () => {
+      try {
+        const [nftResponse, usdcardResponse] = await Promise.all([
+          fetch('./abi/NFT.json'),
+          fetch('./abi/USDCard.json')
+        ]);
+        
+        const [nftData, usdcardData] = await Promise.all([
+          nftResponse.json(),
+          usdcardResponse.json()
+        ]);
+        
+        setNftAbi(nftData.abi);
+        setUsdcardAbi(usdcardData.abi);
+      } catch (err) {
+        console.error("Error loading ABIs:", err);
+        setError("Failed to load contract ABIs");
+      }
+    };
+
+    loadAbis();
+  }, []);
+
+  // 2. Инициализация контрактов после загрузки ABI
   const getContracts = async () => {
-    if (!window.ethereum) {
-      alert('Please install MetaMask');
+    if (!window.ethereum || !nftAbi || !usdcardAbi) {
+      alert('Please install MetaMask and wait for contracts to load');
       return null;
     }
 
@@ -189,12 +218,9 @@ function App() {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
 
-      const nftAbi = await fetch('./abi/NFT.json').then(res => res.json());
-      const usdcardAbi = await fetch('./abi/USDCard.json').then(res => res.json());
-
       const newContracts = {
-        nftContract: new ethers.Contract(NFT_CONTRACT_ADDRESS, nftAbi.abi, signer),
-        usdcardContract: new ethers.Contract(USDCARD_CONTRACT_ADDRESS, usdcardAbi.abi, signer)
+        nftContract: new ethers.Contract(NFT_CONTRACT_ADDRESS, nftAbi, signer),
+        usdcardContract: new ethers.Contract(USDCARD_CONTRACT_ADDRESS, usdcardAbi, signer)
       };
 
       setContracts(newContracts);
@@ -206,131 +232,70 @@ function App() {
     }
   };
 
+  // 3. Обновление лидерборда
   const updateLeaderboard = async (address, balance) => {
-    console.log("Attempting to update leaderboard:", { address, balance });
-  
     if (!address || address.toLowerCase() === ADMIN_ADDRESS.toLowerCase()) {
-      console.log("Skipped - admin address or empty address");
       return { status: "skipped" };
     }
-  
+
     try {
-      const payload = { 
-        address: address.toLowerCase(),
-        balance: parseFloat(balance)
-      };
-  
-      console.log("Sending payload:", payload);
-  
-      // Пробуем стандартный запрос с обработкой CORS
-      try {
-        const response = await fetch(GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log("Update successful (standard mode):", result);
-          return result;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      } catch (standardError) {
-        console.warn("Standard POST failed, trying no-cors:", standardError);
-  
-        // Fallback: no-cors режим
-        await fetch(GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-  
-        console.log("Request sent (no-cors fallback mode)");
-        return { status: "success_no_cors" };
-      }
+      const response = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          address: address.toLowerCase(),
+          balance: parseFloat(balance)
+        })
+      });
+      
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return await response.json();
     } catch (error) {
       console.error('Leaderboard update failed:', error);
-      return { 
-        status: 'error', 
-        message: error.message,
-        details: error.stack 
-      };
+      return { status: 'error', message: error.message };
     }
   };
-  
 
+  // 4. Загрузка лидерборда
   const loadLeaderboard = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // 1. Валидация URL
-      if (!GOOGLE_SCRIPT_URL || !GOOGLE_SCRIPT_URL.includes('google.com/macros')) {
-        throw new Error("Invalid Google Script URL configuration");
-      }
-  
-      // 2. Добавляем параметры для избежания кеширования
-      const url = new URL(GOOGLE_SCRIPT_URL);
-      url.searchParams.append('cacheBuster', Date.now());
-  
-      // 3. Делаем запрос с таймаутом
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 сек timeout
-  
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        signal: controller.signal,
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'cors'
-      });
-  
-      clearTimeout(timeoutId);
-  
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || `HTTP error ${response.status}`);
-      }
-  
-      const result = await response.json();
-  
-      // 4. Обработка данных
-      if (!result.success) {
-        throw new Error(result.error || "Invalid response format");
-      }
-  
-      const playersData = result.data.map(player => ({
-        ...player,
-        balance: parseFloat(player.balance.toFixed(2))
-      }));
-  
+      const response = await fetch(`${GOOGLE_SCRIPT_URL}?t=${Date.now()}`);
+      
+      if (!response.ok) throw new Error(`Server error: ${response.status}`);
+      
+      const data = await response.json();
+
+      const playersData = (Array.isArray(data) ? data : [])
+        .filter(player => 
+          player?.address && 
+          player.address.toLowerCase() !== ADMIN_ADDRESS.toLowerCase()
+        )
+        .sort((a, b) => b.balance - a.balance)
+        .slice(0, 100)
+        .map((player, index) => ({
+          ...player,
+          rank: index + 1,
+          balance: parseFloat(player.balance?.toFixed(2)) || 0
+        }));
+
       setPlayers(playersData);
     } catch (err) {
-      console.error('Leaderboard load error:', err);
+      console.error("Error loading leaderboard:", err);
       setError(err.message);
-      
-      // Автоматический рефреш при ошибке сети
-      if (err.name === 'AbortError' || err.message.includes('Failed to fetch')) {
-        setTimeout(loadLeaderboard, 3000); // Повтор через 3 сек
-      }
+      setTimeout(loadLeaderboard, 5000);
     } finally {
       setIsLoading(false);
     }
   };
-  
 
+  // 5. Проверка статуса активов
   const checkAssetStatus = async () => {
-    if (!account || !isVerified) return;
+    if (!account || !isVerified || !contracts) return;
 
     try {
-      const contracts = await getContracts();
-      if (!contracts) return;
-
       setNftStatus(prev => ({ ...prev, isProcessing: true }));
       setUsdcardStatus(prev => ({ ...prev, isProcessing: true }));
 
@@ -355,52 +320,20 @@ function App() {
     }
   };
 
-  const handleMint = async (assetType) => {
-    if (!account) return;
-  
-    try {
-      const contracts = await getContracts();
-      if (!contracts) return;
-  
-      if (assetType === 'NFT') {
-        const hasMinted = await contracts.nftContract.hasMinted(account);
-        if (hasMinted) {
-          setNftStatus({ isMinted: true, isProcessing: false });
-          return alert("You've already minted NFT");
+  // 6. Подписка на события изменения баланса
+  useEffect(() => {
+    if (contracts && isVerified) {
+      contracts.usdcardContract.on("BalanceChanged", (user, balance) => {
+        if (user.toLowerCase() !== ADMIN_ADDRESS.toLowerCase()) {
+          updateLeaderboard(user, ethers.utils.formatUnits(balance, 18));
         }
-  
-        setNftStatus(prev => ({ ...prev, isProcessing: true }));
-        const tx = await contracts.nftContract.mint();
-        await tx.wait();
-        setNftStatus({ isMinted: true, isProcessing: false });
-        alert("NFT successfully minted!");
-      } else if (assetType === 'USDCard') {
-        const hasMinted = await contracts.usdcardContract.hasMinted(account);
-        if (hasMinted) {
-          setUsdcardStatus({ isMinted: true, isProcessing: false });
-          return alert("You've already minted USDCard");
-        }
-  
-        setUsdcardStatus(prev => ({ ...prev, isProcessing: true }));
-        const tx = await contracts.usdcardContract.mint();
-        await tx.wait();
-        setUsdcardStatus({ isMinted: true, isProcessing: false });
-  
-        const balance = await contracts.usdcardContract.balanceOf(account);
-        const formattedBalance = ethers.utils.formatUnits(balance, 18);
-        await updateLeaderboard(account, formattedBalance);
-        alert("10,000 USDCard successfully minted!");
-      }
-    } catch (error) {
-      console.error(`Error minting ${assetType}:`, error);
-      alert(`Error: ${error.message}`);
-      if (assetType === 'NFT') {
-        setNftStatus(prev => ({ ...prev, isProcessing: false }));
-      } else {
-        setUsdcardStatus(prev => ({ ...prev, isProcessing: false }));
-      }
+      });
+
+      return () => {
+        contracts.usdcardContract.removeAllListeners("BalanceChanged");
+      };
     }
-  };
+  }, [contracts, isVerified]);
 
   const connectWallet = async () => {
     try {
@@ -454,6 +387,21 @@ function App() {
       setIsCorrectNetwork(chainId === '0xc488');
     }
   };
+
+  useEffect(() => {
+    if (window.ethereum) {
+      window.ethereum.on('chainChanged', checkNetwork);
+      window.ethereum.on('accountsChanged', (accounts) => {
+        setAccount(accounts[0] || '');
+        setIsVerified(false);
+      });
+
+      return () => {
+        window.ethereum.removeListener('chainChanged', checkNetwork);
+        window.ethereum.removeListener('accountsChanged', () => {});
+      };
+    }
+  }, []);
 
   useEffect(() => {
     if (contracts && isVerified) {
@@ -528,6 +476,13 @@ function App() {
           </>
         )}
       </div>
+
+      {error && (
+        <div className="error-popup">
+          {error}
+          <button onClick={() => setError(null)}>×</button>
+        </div>
+      )}
     </div>
   );
 }
