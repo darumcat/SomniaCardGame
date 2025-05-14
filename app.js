@@ -1,7 +1,7 @@
 const { useState, useEffect } = React;
 
 // Константы
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzmRrF9NvcSgcNCAB_i2u8Xrt6qyzLBOZY69zgFh6xFvffFFaA1fx1eYp6AcjMc7mi8Ug/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwb3BCQwlN4YPqaTKaFbB1gO-VuHAsRgata1OAdB5zOYq5WneaaaxHlFhsbToE_PDyM/exec";
 const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I";
 const NFT_CONTRACT_ADDRESS = "0xdE3252Ba19C00Cb75c205b0e4835312dF0e8bdDF";
 const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
@@ -273,16 +273,15 @@ function App() {
         try {
           const balance = await contracts.usdcardContract.balanceOf(account);
           const formattedBalance = ethers.utils.formatUnits(balance, 18);
-          await updateLeaderboard(account, formattedBalance); // Обновляем лидерборд с новым балансом
+          await updateLeaderboard(account, formattedBalance);
         } catch (updateError) {
           console.warn("Failed to update user balance:", updateError);
-          // Продолжаем загрузку даже если обновление не удалось
         }
       }
   
-      // 2. Загружаем лидерборд с прокси-параметром для CORS
-      const timestamp = Date.now(); // Добавляем timestamp чтобы избежать кеширования
-      const leaderboardUrl = `${GOOGLE_SCRIPT_URL}?action=getLeaderboard&t=${timestamp}`;
+      // 2. Загружаем лидерборд
+      const timestamp = Date.now();
+      const leaderboardUrl = `${GOOGLE_SCRIPT_URL}?t=${timestamp}`; // Убрали action=getLeaderboard
       
       const response = await fetch(leaderboardUrl, {
         method: 'GET',
@@ -305,24 +304,23 @@ function App() {
           player.address.toLowerCase() !== ADMIN_ADDRESS.toLowerCase() && 
           !isNaN(player.balance)
         )
-        .sort((a, b) => b.balance - a.balance) // Сортируем по убыванию баланса
-        .slice(0, 100); // Ограничиваем количество игроков до 100
+        .sort((a, b) => b.balance - a.balance)
+        .slice(0, 100);
   
-      setPlayers(playersData); // Обновляем состояние игроков
+      setPlayers(playersData);
     } catch (error) {
       console.error('Error loading leaderboard:', error);
       
-      // Показываем пользователю понятное сообщение
       let errorMessage = 'Failed to load leaderboard';
       if (error.message.includes('Failed to fetch')) {
-        errorMessage += ' - Network error. Please check your connection.';
+        errorMessage += ' - Network error. Please check your connection and try again.';
       } else {
         errorMessage += `: ${error.message}`;
       }
       
-      alert(errorMessage); // Показываем alert с ошибкой
+      alert(errorMessage);
     } finally {
-      setIsLoading(false); // Завершаем процесс загрузки
+      setIsLoading(false);
     }
   };
   
