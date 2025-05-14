@@ -178,6 +178,7 @@ function App() {
   const [contracts, setContracts] = useState(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [players, setPlayers] = useState([]);
+  const [error, setError] = useState(null);
 
   const getContracts = async () => {
     if (!window.ethereum) {
@@ -267,53 +268,53 @@ function App() {
 
   const loadLeaderboard = async () => {
     setIsLoading(true);
-    setError(null);
-    
+    setError(null); // Теперь setError определен
+      
     try {
       // 1. Валидация URL
       if (!GOOGLE_SCRIPT_URL || !GOOGLE_SCRIPT_URL.includes('google.com/macros')) {
         throw new Error("Invalid Google Script URL configuration");
       }
-  
+    
       // 2. Добавляем параметры для избежания кеширования
       const url = new URL(GOOGLE_SCRIPT_URL);
       url.searchParams.append('cacheBuster', Date.now());
-  
+    
       // 3. Делаем запрос с таймаутом
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 сек timeout
-  
+    
       const response = await fetch(url.toString(), {
         method: 'GET',
         signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
         mode: 'cors'
       });
-  
+    
       clearTimeout(timeoutId);
-  
+    
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new Error(errorData?.message || `HTTP error ${response.status}`);
       }
-  
+    
       const result = await response.json();
-  
+    
       // 4. Обработка данных
       if (!result.success) {
         throw new Error(result.error || "Invalid response format");
       }
-  
+    
       const playersData = result.data.map(player => ({
         ...player,
         balance: parseFloat(player.balance.toFixed(2))
       }));
-  
+    
       setPlayers(playersData);
     } catch (err) {
       console.error('Leaderboard load error:', err);
       setError(err.message);
-      
+        
       // Автоматический рефреш при ошибке сети
       if (err.name === 'AbortError' || err.message.includes('Failed to fetch')) {
         setTimeout(loadLeaderboard, 3000); // Повтор через 3 сек
