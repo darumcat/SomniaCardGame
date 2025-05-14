@@ -1,7 +1,7 @@
 const { useState, useEffect } = React;
 
 // Константы
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-HGTZfU--B6TU1TQsRonGaN-2t6ndKf9Y3Sb7PJ1L3sLfXIPNi_3BwUnJr6hbwMVDqA/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6xBJNPfKt8esaOj9Tu1H97dHQW76LUf1z8IOSzJQbouffJ5CnHiEuehvzSG8efGIR3g/exec";
 const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I";
 const NFT_CONTRACT_ADDRESS = "0xdE3252Ba19C00Cb75c205b0e4835312dF0e8bdDF";
 const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
@@ -267,73 +267,57 @@ function App() {
 
   const loadLeaderboard = async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      // 1. Проверяем URL
-      if (!GOOGLE_SCRIPT_URL) {
-        throw new Error("Google Script URL is not configured");
+      // 1. Валидация URL
+      if (!GOOGLE_SCRIPT_URL || !GOOGLE_SCRIPT_URL.includes('google.com/macros')) {
+        throw new Error("Invalid Google Script URL configuration");
       }
   
-      // 2. Обновляем баланс пользователя (если подключён)
-      if (account && contracts) {
-        try {
-          const balance = await contracts.usdcardContract.balanceOf(account);
-          const formattedBalance = ethers.utils.formatUnits(balance, 18);
-          await updateLeaderboard(account, formattedBalance);
-        } catch (updateError) {
-          console.warn("Balance update skipped:", updateError.message);
-        }
+      // 2. Добавляем параметры для избежания кеширования
+      const url = new URL(GOOGLE_SCRIPT_URL);
+      url.searchParams.append('cacheBuster', Date.now());
+  
+      // 3. Делаем запрос с таймаутом
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 сек timeout
+  
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' },
+        mode: 'cors'
+      });
+  
+      clearTimeout(timeoutId);
+  
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `HTTP error ${response.status}`);
       }
   
-      // 3. Делаем запрос с таймаутом и повторными попытками
-      const fetchWithRetry = async (url, options, retries = 3) => {
-        try {
-          const response = await fetch(url, options);
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          return await response.json();
-        } catch (error) {
-          if (retries > 0) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            return fetchWithRetry(url, options, retries - 1);
-          }
-          throw error;
-        }
-      };
+      const result = await response.json();
   
-      const data = await fetchWithRetry(
-        `${GOOGLE_SCRIPT_URL}?t=${Date.now()}`,
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          cache: 'no-cache'
-        }
-      );
+      // 4. Обработка данных
+      if (!result.success) {
+        throw new Error(result.error || "Invalid response format");
+      }
   
-      // 4. Обрабатываем данные
-      const playersData = (Array.isArray(data) ? data : [])
-        .filter(player => player?.address && !isNaN(player?.balance))
-        .sort((a, b) => b.balance - a.balance)
-        .slice(0, 100)
-        .map((player, index) => ({
-          ...player,
-          rank: index + 1
-        }));
+      const playersData = result.data.map(player => ({
+        ...player,
+        balance: parseFloat(player.balance.toFixed(2))
+      }));
   
       setPlayers(playersData);
-    } catch (error) {
-      console.error('Leaderboard load failed:', error);
+    } catch (err) {
+      console.error('Leaderboard load error:', err);
+      setError(err.message);
       
-      // Более информативное сообщение об ошибке
-      let errorMessage = 'Не удалось загрузить таблицу лидеров';
-      if (error.message.includes('Failed to fetch')) {
-        errorMessage += ' - Проблема с подключением к серверу';
-      } else if (error.message.includes('HTTP')) {
-        errorMessage += ` - Ошибка сервера: ${error.message}`;
-      } else {
-        errorMessage += `: ${error.message}`;
+      // Автоматический рефреш при ошибке сети
+      if (err.name === 'AbortError' || err.message.includes('Failed to fetch')) {
+        setTimeout(loadLeaderboard, 3000); // Повтор через 3 сек
       }
-      
-      // Можно использовать toast или другой UI вместо alert
-      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
