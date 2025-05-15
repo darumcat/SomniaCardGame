@@ -208,116 +208,172 @@ function App() {
   };
 
   const updateLeaderboard = async (address, balance) => {
-    console.log("Attempting to update leaderboard:", { address, balance });
-  
-    if (!address || address.toLowerCase() === ADMIN_ADDRESS.toLowerCase()) {
-      console.log("Skipped - admin address or empty address");
-      return { status: "skipped" };
+    // Валидация входных данных
+    if (!address || typeof address !== 'string') {
+      console.error('Invalid address:', address);
+      return { status: 'error', message: 'Invalid address' };
     }
   
+    if (isNaN(balance) {
+      console.error('Invalid balance:', balance);
+      return { status: 'error', message: 'Invalid balance' };
+    }
+  
+    const normalizedAddress = address.toLowerCase();
+  
+    // Пропускаем админский адрес
+    if (normalizedAddress === ADMIN_ADDRESS.toLowerCase()) {
+      console.log('Skipped admin address');
+      return { status: 'skipped', reason: 'admin_address' };
+    }
+  
+    const payload = {
+      address: normalizedAddress,
+      balance: parseFloat(balance)
+    };
+  
+    console.log('Updating leaderboard with:', payload);
+  
     try {
-      const payload = { 
-        address: address.toLowerCase(),
-        balance: parseFloat(balance)
-      };
-  
-      console.log("Sending payload:", payload);
-  
-      // Пробуем стандартный запрос с обработкой CORS
+      // Основной запрос (с CORS)
       try {
         const response = await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(payload),
         });
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log("Update successful (standard mode):", result);
-          return result;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      } catch (standardError) {
-        console.warn("Standard POST failed, trying no-cors:", standardError);
   
-        // Fallback: no-cors режим
-        await fetch(GOOGLE_SCRIPT_URL, {
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+  
+        const result = await response.json();
+        
+        if (!result || result.status === 'error') {
+          throw new Error(result?.message || 'Invalid server response');
+        }
+  
+        console.log('Successfully updated:', result);
+        return result;
+      } catch (standardError) {
+        console.warn('Standard POST failed, trying fallback:', standardError);
+        
+        // Fallback попытка (без CORS)
+        const fallbackResponse = await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(payload),
         });
   
-        console.log("Request sent (no-cors fallback mode)");
-        return { status: "success_no_cors" };
+        // В no-cors режиме мы не можем прочитать ответ
+        console.log('Fallback request sent (no-cors)');
+        return { 
+          status: 'success_no_cors',
+          warning: 'Used no-cors fallback'
+        };
       }
     } catch (error) {
-      console.error('Leaderboard update failed:', error);
-      return { 
-        status: 'error', 
+      const errorInfo = {
+        status: 'error',
         message: error.message,
-        details: error.stack 
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        payload: payload
       };
+      
+      console.error('Update failed:', errorInfo);
+      return errorInfo;
     }
   };
   
 
   const loadLeaderboard = async () => {
     setIsLoading(true);
-    setError(null); // Теперь setError определен
-      
+    setError(null);
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
+  
     try {
       // 1. Валидация URL
-      if (!GOOGLE_SCRIPT_URL || !GOOGLE_SCRIPT_URL.includes('google.com/macros')) {
+      if (!GOOGLE_SCRIPT_URL?.includes('google.com/macros')) {
         throw new Error("Invalid Google Script URL configuration");
       }
-    
-      // 2. Добавляем параметры для избежания кеширования
+  
+      // 2. Добавляем параметры против кеширования
       const url = new URL(GOOGLE_SCRIPT_URL);
       url.searchParams.append('cacheBuster', Date.now());
-    
-      // 3. Делаем запрос с таймаутом
+      url.searchParams.append('mode', 'leaderboard');
+  
+      // 3. Настройка запроса с таймаутом
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 сек timeout
-    
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+  
+      // 4. Выполнение запроса
       const response = await fetch(url.toString(), {
         method: 'GET',
-        signal: controller.signal,
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'cors'
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest' 
+        },
+        signal: controller.signal
       });
-    
+  
       clearTimeout(timeoutId);
-    
+  
+      // 5. Обработка HTTP ошибок
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || `HTTP error ${response.status}`);
+        throw new Error(errorData?.message || `HTTP ${response.status}`);
       }
-    
-      const result = await response.json();
-    
-      // 4. Обработка данных
-      if (!result.success) {
-        throw new Error(result.error || "Invalid response format");
+  
+      // 6. Парсинг и валидация данных
+      const rawData = await response.json();
+      
+      if (!Array.isArray(rawData)) {
+        throw new Error("Invalid data format: expected array");
       }
-    
-      const playersData = result.data.map(player => ({
-        ...player,
-        balance: parseFloat(player.balance.toFixed(2))
-      }));
-    
-      setPlayers(playersData);
+  
+      // 7. Форматирование данных
+      const processedPlayers = rawData
+        .filter(player => 
+          player?.address && 
+          !isNaN(player.balance) &&
+          player.address.toLowerCase() !== ADMIN_ADDRESS.toLowerCase()
+        )
+        .map(player => ({
+          address: player.address,
+          balance: parseFloat(Number(player.balance).toFixed(2)),
+          date: player.date ? new Date(player.date) : null,
+          isCurrentUser: player.address.toLowerCase() === account?.toLowerCase()
+        }))
+        .sort((a, b) => b.balance - a.balance);
+  
+      // 8. Сохранение результатов
+      setPlayers(processedPlayers);
+      setError(null);
+      retryCount = 0;
+  
     } catch (err) {
-      console.error('Leaderboard load error:', err);
-      setError(err.message);
-        
-      // Автоматический рефреш при ошибке сети
-      if (err.name === 'AbortError' || err.message.includes('Failed to fetch')) {
-        setTimeout(loadLeaderboard, 3000); // Повтор через 3 сек
+      console.error(`Leaderboard load error (attempt ${retryCount + 1}):`, err);
+      
+      // 9. Обработка специфических ошибок
+      if (err.name === 'AbortError') {
+        setError("Request timeout. Please check your connection");
+      } else {
+        setError(err.message || "Failed to load leaderboard");
+      }
+  
+      // 10. Автоматический ретрай
+      if (retryCount < MAX_RETRIES && 
+          (err.name === 'AbortError' || err.message.includes('Failed to fetch'))) {
+        retryCount++;
+        await new Promise(resolve => setTimeout(resolve, 3000 * retryCount));
+        return loadLeaderboard();
       }
     } finally {
       setIsLoading(false);
