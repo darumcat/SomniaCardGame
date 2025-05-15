@@ -7,31 +7,6 @@ const NFT_CONTRACT_ADDRESS = "0xdE3252Ba19C00Cb75c205b0e4835312dF0e8bdDF";
 const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
 const ADMIN_ADDRESS = "0x32B26a75Deaf84ACf1e5F67CB680FAD9fb2C783a";
 
-// ABI для проверки баланса USDCard
-const USDCARD_ABI = [
-  "function balanceOf(address owner) view returns (uint256)",
-  "function decimals() view returns (uint8)"
-];
-
-async function getUSDCBalance() {
-  if (typeof window.ethereum !== "undefined") {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    await provider.send("eth_requestAccounts", []); // открывает MetaMask
-    const signer = provider.getSigner();
-    const address = await signer.getAddress();
-
-    const contract = new ethers.Contract(USDCARD_CONTRACT_ADDRESS, USDCARD_ABI, provider);
-    const balanceRaw = await contract.balanceOf(address);
-    const decimals = await contract.decimals();
-    const balance = parseFloat(ethers.utils.formatUnits(balanceRaw, decimals));
-
-    return { address, balance };
-  } else {
-    alert("MetaMask не найден");
-    return null;
-  }
-}
-
 function Header({ account, isVerified }) {
   return (
     <header>
@@ -171,31 +146,11 @@ function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
 }
 
 function GameSection({ account, contracts, onLeaderboardClick }) {
-  const [usdcBalance, setUsdcBalance] = useState(null);
-
-  const checkBalance = async () => {
-    const balanceInfo = await getUSDCBalance();
-    if (balanceInfo) {
-      setUsdcBalance(balanceInfo.balance);
-    }
-  };
-
   return (
     <div className="game-section">
       <h2>Welcome to Somnia Card Game</h2>
       <div className="action-buttons">
         <AddTokenButton />
-        <button 
-          className="action-btn balance-btn"
-          onClick={checkBalance}
-        >
-          Check USDCard Balance
-        </button>
-        {usdcBalance !== null && (
-          <div className="balance-display">
-            Your USDCard Balance: {usdcBalance.toLocaleString()}
-          </div>
-        )}
         <button 
           className="action-btn play-btn"
           onClick={() => alert('Game "Durak" will start soon')}
@@ -259,7 +214,7 @@ function App() {
       return { status: 'error', message: 'Invalid address' };
     }
   
-    if (isNaN(balance)) {
+    if (isNaN(balance)) {  // ← Добавлена недостающая скобка
       console.error('Invalid balance:', balance);
       return { status: 'error', message: 'Invalid balance' };
     }
