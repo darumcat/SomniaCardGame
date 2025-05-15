@@ -109,7 +109,50 @@ function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
   const formatAddress = (addr) => 
     addr.length > 10 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
 
-  // Костыль №3: Добавляем проверку на пустой массив
+  const [isAdding, setIsAdding] = useState(false);
+
+  const addToLeaderboard = async () => {
+    if (!account) return;
+    
+    setIsAdding(true);
+    try {
+      // 1. Получаем баланс USDCard
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const contract = new ethers.Contract(
+        USDCARD_CONTRACT_ADDRESS,
+        ["function balanceOf(address) view returns (uint256)"],
+        provider
+      );
+      
+      const balanceRaw = await contract.balanceOf(account);
+      const balance = parseFloat(ethers.utils.formatUnits(balanceRaw, 18));
+
+      // 2. Отправляем данные в Google Sheets
+      const result = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address: account,
+          balance: balance
+        }),
+      });
+
+      if (!result.ok) {
+        throw new Error('Failed to update leaderboard');
+      }
+
+      alert(`Success! Your balance: ${balance.toLocaleString()} USDCard`);
+      onRefresh(); // Обновляем список
+    } catch (error) {
+      console.error('Add to leaderboard error:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
   if (!players || players.length === 0) {
     return (
       <div className="leaderboard-screen">
@@ -123,7 +166,14 @@ function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
           </button>
         </div>
         <div className="empty-message">
-          No players found. Try refreshing the leaderboard.
+          <button 
+            className="action-btn add-leaderboard-btn"
+            onClick={addToLeaderboard}
+            disabled={isAdding}
+          >
+            {isAdding ? 'Adding...' : 'Add me to Leaderboard'}
+          </button>
+          <p>No players found. Try adding yourself to leaderboard.</p>
         </div>
       </div>
     );
@@ -136,9 +186,18 @@ function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
           ← Back to Game
         </button>
         <h2>Top 100 Players</h2>
-        <button className="refresh-btn" onClick={onRefresh}>
-          Refresh
-        </button>
+        <div>
+          <button className="refresh-btn" onClick={onRefresh}>
+            Refresh
+          </button>
+          <button 
+            className="action-btn add-leaderboard-btn"
+            onClick={addToLeaderboard}
+            disabled={isAdding}
+          >
+            {isAdding ? 'Adding...' : 'Add me'}
+          </button>
+        </div>
       </div>
       
       <div className="leaderboard-container">

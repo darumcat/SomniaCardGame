@@ -355,3 +355,24 @@ header h1 {
   background: rgba(0, 219, 222, 0.15) !important;
   font-weight: bold;
 }
+
+.add-leaderboard-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  margin-left: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.add-leaderboard-btn:hover {
+  background-color: #45a049;
+}
+
+.add-leaderboard-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
