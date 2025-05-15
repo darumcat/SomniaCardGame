@@ -298,78 +298,87 @@ function App() {
     const MAX_RETRIES = 3;
     let retryCount = 0;
   
-    const load = async () => {
+    const fetchWithRetry = async () => {
       try {
-        // 1. Валидация URL
-        if (!GOOGLE_SCRIPT_URL || !GOOGLE_SCRIPT_URL.includes('google.com/macros')) {
-          throw new Error("Invalid Google Script URL");
+        // 1. Проверка URL
+        if (!GOOGLE_SCRIPT_URL) {
+          throw new Error("Google Script URL not configured");
         }
   
-        // 2. Добавляем параметры против кеширования
+        // 2. Добавляем параметр для избежания кеширования
         const url = new URL(GOOGLE_SCRIPT_URL);
-        url.searchParams.append('cacheBuster', Date.now());
+        url.searchParams.append('action', 'getLeaderboard');
+        url.searchParams.append('nocache', Date.now());
   
-        // 3. Настройка abort controller
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
+        // 3. Варианты endpoint'ов для обхода CORS
+        const endpoints = [
+          url.toString(), // Основной URL
+          `https://cors-anywhere.herokuapp.com/${url.toString()}`, // CORS proxy
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(url.toString())}`
+        ];
   
-        // 4. Выполняем запрос
-        const response = await fetch(url.toString(), {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal
-        });
-        clearTimeout(timeout);
+        // 4. Пробуем все endpoint'ы по очереди
+        for (const endpoint of endpoints) {
+          try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000);
   
-        // 5. Проверка ответа
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => 'No error details');
-          throw new Error(`Server error: ${response.status} - ${errorText}`);
+            const response = await fetch(endpoint, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              signal: controller.signal
+            });
+  
+            clearTimeout(timeout);
+  
+            if (!response.ok) continue;
+  
+            const data = await response.json();
+  
+            if (!Array.isArray(data)) {
+              throw new Error("Invalid data format");
+            }
+  
+            // Обработка данных
+            const processed = data
+              .filter(player => player?.address && !isNaN(player.balance))
+              .map(player => ({
+                address: player.address,
+                balance: parseFloat(player.balance).toFixed(2),
+                date: player.date || null
+              }))
+              .sort((a, b) => b.balance - a.balance);
+  
+            setPlayers(processed);
+            return true;
+          } catch (error) {
+            console.warn(`Attempt failed for ${endpoint}:`, error);
+            continue;
+          }
         }
   
-        // 6. Парсинг данных
-        const data = await response.json();
-        
-        if (!Array.isArray(data)) {
-          throw new Error("Invalid data format: expected array");
-        }
-  
-        // 7. Обработка данных
-        const processed = data
-          .filter(player => 
-            player?.address && 
-            !isNaN(player.balance) &&
-            player.address.toLowerCase() !== ADMIN_ADDRESS.toLowerCase()
-          )
-          .map(player => ({
-            address: player.address,
-            balance: Number(parseFloat(player.balance).toFixed(2)),
-            date: player.date || null
-          }))
-          .sort((a, b) => b.balance - a.balance);
-  
-        setPlayers(processed);
-        setError(null);
-        return true;
+        throw new Error("All endpoints failed");
   
       } catch (err) {
-        console.error(`Load error (attempt ${retryCount + 1}):`, err);
-        
-        // Автоматический ретрай для сетевых ошибок
-        if (retryCount < MAX_RETRIES && 
-            (err.name === 'AbortError' || err.message.includes('Failed to fetch'))) {
+        console.error(`Attempt ${retryCount + 1} failed:`, err);
+        if (retryCount < MAX_RETRIES) {
           retryCount++;
           await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
-          return load(); // Рекурсивный вызов
+          return fetchWithRetry();
         }
-  
-        setError(err.message || "Failed to load leaderboard");
-        return false;
+        throw err;
       }
     };
   
     try {
-      await load();
+      await fetchWithRetry();
+      setError(null);
+    } catch (err) {
+      setError(err.message || "Failed to load leaderboard");
+      console.error("Final load error:", err);
     } finally {
       setIsLoading(false);
     }
