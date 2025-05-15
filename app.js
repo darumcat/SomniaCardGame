@@ -109,6 +109,26 @@ function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
   const formatAddress = (addr) => 
     addr.length > 10 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
 
+  // Костыль №3: Добавляем проверку на пустой массив
+  if (!players || players.length === 0) {
+    return (
+      <div className="leaderboard-screen">
+        <div className="leaderboard-header">
+          <button className="back-btn" onClick={onBackClick}>
+            ← Back to Game
+          </button>
+          <h2>Leaderboard is empty</h2>
+          <button className="refresh-btn" onClick={onRefresh}>
+            Refresh
+          </button>
+        </div>
+        <div className="empty-message">
+          No players found. Try refreshing the leaderboard.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="leaderboard-screen">
       <div className="leaderboard-header">
@@ -293,53 +313,97 @@ function App() {
   
 
   const loadLeaderboard = async () => {
-    setIsLoading(true); // Показать индикатор загрузки
-    setError(null); // Сбросить ошибки
+    setIsLoading(true);
+    setError(null);
     
     try {
-      // 3 резервных варианта на случай CORS-блокировки
-      const urls = [
-        GOOGLE_SCRIPT_URL, // Основной URL
-        `https://cors-anywhere.herokuapp.com/${GOOGLE_SCRIPT_URL}`, // Proxy 1
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(GOOGLE_SCRIPT_URL)}` // Proxy 2
-      ];
-  
-      let response;
+      // 1. Делаем запрос с таймаутом 5 секунд
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
       
-      // Перебор всех URL до первого успешного
-      for (const url of urls) {
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 5000); // Таймаут 5 сек
-          
-          response = await fetch(`${url}?cache=${Date.now()}`, {
-            signal: controller.signal
-          });
-          
-          clearTimeout(timeout);
-          
-          if (response.ok) break; // Успешный ответ
-        } catch (e) {
-          console.warn(`Attempt failed for ${url}:`, e);
+      const response = await fetch(`${GOOGLE_SCRIPT_URL}?cache=${Date.now()}`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+  
+      // 2. Проверяем статус ответа
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to load leaderboard');
+      }
+  
+      // 3. Пытаемся распарсить JSON
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error('Invalid JSON response from server');
+      }
+  
+      // 4. Проверяем структуру данных (костыли на костылях)
+      let safeData = [];
+      if (data) {
+        // Вариант 1: данные в поле leaderboard
+        if (Array.isArray(data.leaderboard)) {
+          safeData = data.leaderboard;
+        } 
+        // Вариант 2: данные в корне
+        else if (Array.isArray(data)) {
+          safeData = data;
+        }
+        // Вариант 3: странная структура, но попробуем достать
+        else if (data.status === 'success' && Array.isArray(data.data)) {
+          safeData = data.data;
         }
       }
   
-      // Если все попытки провалились
-      if (!response || !response.ok) {
-        throw new Error('Не удалось загрузить данные');
-      }
+      // 5. Фильтрация и нормализация данных
+      const filteredPlayers = safeData
+        .map(item => {
+          // Приводим к стандартной структуре
+          return {
+            address: item.address || item.wallet || item.player || '',
+            balance: parseFloat(item.balance || item.amount || item.value || 0)
+          };
+        })
+        .filter(player => {
+          // Фильтруем некорректные записи
+          return (
+            player &&
+            typeof player.address === 'string' &&
+            player.address.length > 0 &&
+            !isNaN(player.balance)
+          );
+        })
+        .sort((a, b) => b.balance - a.balance); // Сортируем по балансу
   
-      const data = await response.json();
-      setPlayers(data); // Обновляем состояние
+      // 6. Лимитируем до топ-100
+      const topPlayers = filteredPlayers.slice(0, 100);
       
+      setPlayers(topPlayers);
+      setError(null);
     } catch (err) {
-      console.error('Ошибка загрузки:', err);
-      setError(err.message);
+      console.error('Leaderboard load error:', err);
       
-      // Автоповтор через 3 секунды
-      setTimeout(loadLeaderboard, 3000);
+      // Понятные сообщения для разных типов ошибок
+      let errorMessage = 'Failed to load leaderboard';
+      if (err.name === 'AbortError') {
+        errorMessage = 'Request timeout. Try again later';
+      } else if (err.message.includes('JSON')) {
+        errorMessage = 'Server response format error';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
+      setPlayers([]); // Сбрасываем список игроков
+      
+      // Автоповтор через 5 секунд при ошибках сети
+      if (err.name !== 'AbortError' && !err.message.includes('JSON')) {
+        setTimeout(loadLeaderboard, 5000);
+      }
     } finally {
-      setIsLoading(false); // Скрыть индикатор
+      setIsLoading(false);
     }
   };
   
