@@ -295,86 +295,81 @@ function App() {
   const loadLeaderboard = async () => {
     setIsLoading(true);
     setError(null);
-    let retryCount = 0;
     const MAX_RETRIES = 3;
+    let retryCount = 0;
+  
+    const load = async () => {
+      try {
+        // 1. Валидация URL
+        if (!GOOGLE_SCRIPT_URL || !GOOGLE_SCRIPT_URL.includes('google.com/macros')) {
+          throw new Error("Invalid Google Script URL");
+        }
+  
+        // 2. Добавляем параметры против кеширования
+        const url = new URL(GOOGLE_SCRIPT_URL);
+        url.searchParams.append('cacheBuster', Date.now());
+  
+        // 3. Настройка abort controller
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
+  
+        // 4. Выполняем запрос
+        const response = await fetch(url.toString(), {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+  
+        // 5. Проверка ответа
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'No error details');
+          throw new Error(`Server error: ${response.status} - ${errorText}`);
+        }
+  
+        // 6. Парсинг данных
+        const data = await response.json();
+        
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid data format: expected array");
+        }
+  
+        // 7. Обработка данных
+        const processed = data
+          .filter(player => 
+            player?.address && 
+            !isNaN(player.balance) &&
+            player.address.toLowerCase() !== ADMIN_ADDRESS.toLowerCase()
+          )
+          .map(player => ({
+            address: player.address,
+            balance: Number(parseFloat(player.balance).toFixed(2)),
+            date: player.date || null
+          }))
+          .sort((a, b) => b.balance - a.balance);
+  
+        setPlayers(processed);
+        setError(null);
+        return true;
+  
+      } catch (err) {
+        console.error(`Load error (attempt ${retryCount + 1}):`, err);
+        
+        // Автоматический ретрай для сетевых ошибок
+        if (retryCount < MAX_RETRIES && 
+            (err.name === 'AbortError' || err.message.includes('Failed to fetch'))) {
+          retryCount++;
+          await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
+          return load(); // Рекурсивный вызов
+        }
+  
+        setError(err.message || "Failed to load leaderboard");
+        return false;
+      }
+    };
   
     try {
-      // 1. Валидация URL
-      if (!GOOGLE_SCRIPT_URL?.includes('google.com/macros')) {
-        throw new Error("Invalid Google Script URL configuration");
-      }
-  
-      // 2. Добавляем параметры против кеширования
-      const url = new URL(GOOGLE_SCRIPT_URL);
-      url.searchParams.append('cacheBuster', Date.now());
-      url.searchParams.append('mode', 'leaderboard');
-  
-      // 3. Настройка запроса с таймаутом
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-  
-      // 4. Выполнение запроса
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest' 
-        },
-        signal: controller.signal
-      });
-  
-      clearTimeout(timeoutId);
-  
-      // 5. Обработка HTTP ошибок
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || `HTTP ${response.status}`);
-      }
-  
-      // 6. Парсинг и валидация данных
-      const rawData = await response.json();
-      
-      if (!Array.isArray(rawData)) {
-        throw new Error("Invalid data format: expected array");
-      }
-  
-      // 7. Форматирование данных
-      const processedPlayers = rawData
-        .filter(player => 
-          player?.address && 
-          !isNaN(player.balance) &&
-          player.address.toLowerCase() !== ADMIN_ADDRESS.toLowerCase()
-        )
-        .map(player => ({
-          address: player.address,
-          balance: parseFloat(Number(player.balance).toFixed(2)),
-          date: player.date ? new Date(player.date) : null,
-          isCurrentUser: player.address.toLowerCase() === account?.toLowerCase()
-        }))
-        .sort((a, b) => b.balance - a.balance);
-  
-      // 8. Сохранение результатов
-      setPlayers(processedPlayers);
-      setError(null);
-      retryCount = 0;
-  
-    } catch (err) {
-      console.error(`Leaderboard load error (attempt ${retryCount + 1}):`, err);
-      
-      // 9. Обработка специфических ошибок
-      if (err.name === 'AbortError') {
-        setError("Request timeout. Please check your connection");
-      } else {
-        setError(err.message || "Failed to load leaderboard");
-      }
-  
-      // 10. Автоматический ретрай
-      if (retryCount < MAX_RETRIES && 
-          (err.name === 'AbortError' || err.message.includes('Failed to fetch'))) {
-        retryCount++;
-        await new Promise(resolve => setTimeout(resolve, 3000 * retryCount));
-        return loadLeaderboard();
-      }
+      await load();
     } finally {
       setIsLoading(false);
     }
