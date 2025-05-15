@@ -214,7 +214,7 @@ function App() {
       return { status: 'error', message: 'Invalid address' };
     }
   
-    if (isNaN(balance) {
+    if (isNaN(balance)) {  // ← Добавлена недостающая скобка
       console.error('Invalid balance:', balance);
       return { status: 'error', message: 'Invalid balance' };
     }
