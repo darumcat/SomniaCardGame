@@ -1,0 +1,4 @@
+/*
+  Access-Control-Allow-Origin: https://somniacardgame.netlify.app/
+  Access-Control-Allow-Methods: GET, POST, OPTIONS
+  Access-Control-Allow-Headers: Content-Type
