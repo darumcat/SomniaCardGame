@@ -1,7 +1,6 @@
 const { useState, useEffect } = React;
 
 // Константы
-
 const NFT_CONTRACT_ADDRESS = "0xdE3252Ba19C00Cb75c205b0e4835312dF0e8bdDF";
 const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
 const ADMIN_ADDRESS = "0x32B26a75Deaf84ACf1e5F67CB680FAD9fb2C783a";
@@ -112,13 +111,11 @@ function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Новая функция добавления в лидерборд через Firestore
   const addToLeaderboard = async () => {
     if (!account) return;
     
     setIsAdding(true);
     try {
-      // 1. Получаем баланс USDCard
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const contract = new ethers.Contract(
         USDCARD_CONTRACT_ADDRESS,
@@ -129,7 +126,6 @@ function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
       const balanceRaw = await contract.balanceOf(account);
       const balance = parseFloat(ethers.utils.formatUnits(balanceRaw, 18));
 
-      // 2. Добавляем в Firestore
       await db.collection("leaderboard").doc(account.toLowerCase()).set({
         address: account,
         balance: balance,
@@ -137,7 +133,7 @@ function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
       });
 
       alert('Your balance has been submitted to leaderboard!');
-      onRefresh(); // Используем оригинальный onRefresh для обновления списка
+      onRefresh();
     } catch (error) {
       console.error('Add to leaderboard error:', error);
       alert('Error updating leaderboard: ' + error.message);

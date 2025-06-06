@@ -9,23 +9,24 @@
   <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCRSHT78-oq6n5gQU0bk6Y1A8PsMWBl1v0",
+      authDomain: "somnialeaderboard.firebaseapp.com",
+      projectId: "somnialeaderboard",
+      storageBucket: "somnialeaderboard.firebasestorage.app",
+      messagingSenderId: "122885457151",
+      appId: "1:122885457151:web:6623ae38f6c8e77979f8ca"
+      measurementId: "G-9GDEX3TV45"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
 </head>
-
-<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-<script>
-  const firebaseConfig = {
-  apiKey: "AIzaSyCRSHT78-oq6n5gQU0bk6Y1A8PsMWBl1v0",
-  authDomain: "somnialeaderboard.firebaseapp.com",
-  projectId: "somnialeaderboard",
-  storageBucket: "somnialeaderboard.firebasestorage.app",
-  messagingSenderId: "122885457151",
-  appId: "1:122885457151:web:6623ae38f6c8e77979f8ca"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-</script>
-
 <body>
   <div id="root"></div>
   
