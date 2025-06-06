@@ -1,8 +1,7 @@
 const { useState, useEffect } = React;
 
 // Константы
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIBRgLByRoctJbW8b3-wXh9VR8GQ1a66nGd9JAGdjAvkZkxZL_M1KCdA_WZaeZqQvl1g/exec";
-const SHEET_ID = "174UJqeEN3MXeRkQNdnaK8V6bquo6Ce5rzsumQ9OWO3I";
+
 const NFT_CONTRACT_ADDRESS = "0xdE3252Ba19C00Cb75c205b0e4835312dF0e8bdDF";
 const USDCARD_CONTRACT_ADDRESS = "0x0Bcbe06d75491470D5bBE2e6F2264c5DAa55621b";
 const ADMIN_ADDRESS = "0x32B26a75Deaf84ACf1e5F67CB680FAD9fb2C783a";
@@ -110,7 +109,10 @@ function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
     addr.length > 10 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
 
   const [isAdding, setIsAdding] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
+  // Новая функция добавления в лидерборд через Firestore
   const addToLeaderboard = async () => {
     if (!account) return;
     
@@ -126,32 +128,46 @@ function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
       
       const balanceRaw = await contract.balanceOf(account);
       const balance = parseFloat(ethers.utils.formatUnits(balanceRaw, 18));
-  
-      // 2. Отправляем данные через прокси для обхода CORS
-      const response = await fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          address: account,
-          balance: balance
-        }),
-        mode: 'no-cors' // Важное изменение!
+
+      // 2. Добавляем в Firestore
+      await db.collection("leaderboard").doc(account.toLowerCase()).set({
+        address: account,
+        balance: balance,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-  
-      // В режиме no-cors мы не можем прочитать ответ, но запрос пройдет
+
       alert('Your balance has been submitted to leaderboard!');
-      onRefresh(); // Обновляем список
-      
+      onRefresh(); // Используем оригинальный onRefresh для обновления списка
     } catch (error) {
       console.error('Add to leaderboard error:', error);
-      alert('Your balance was submitted, but we cannot verify it due to browser restrictions');
+      alert('Error updating leaderboard: ' + error.message);
     } finally {
       setIsAdding(false);
     }
   };
 
+  // Новая функция загрузки лидерборда (если нужно переопределить onRefresh)
+  const loadLeaderboard = async () => {
+    setIsLoading(true);
+    try {
+      const snapshot = await db.collection("leaderboard")
+        .orderBy("balance", "desc")
+        .limit(100)
+        .get();
+
+      const loadedPlayers = snapshot.docs.map(doc => doc.data());
+      // Здесь нужно обновить players через пропс или состояние родителя
+      // Если используется внешнее управление, вызовите onRefresh()
+      onRefresh();
+    } catch (error) {
+      console.error("Load error:", error);
+      setError("Failed to load leaderboard");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Для совместимости с оригинальным кодом
   if (!players || players.length === 0) {
     return (
       <div className="leaderboard-screen">
@@ -160,7 +176,7 @@ function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
             ← Back to Game
           </button>
           <h2>Leaderboard is empty</h2>
-          <button className="refresh-btn" onClick={onRefresh}>
+          <button className="refresh-btn" onClick={onRefresh || loadLeaderboard}>
             Refresh
           </button>
         </div>
@@ -186,7 +202,7 @@ function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
         </button>
         <h2>Top 100 Players</h2>
         <div>
-          <button className="refresh-btn" onClick={onRefresh}>
+          <button className="refresh-btn" onClick={onRefresh || loadLeaderboard}>
             Refresh
           </button>
           <button 
@@ -198,6 +214,8 @@ function LeaderboardScreen({ players, onBackClick, onRefresh, account }) {
           </button>
         </div>
       </div>
+      
+      {error && <div className="error-fallback">{error}</div>}
       
       <div className="leaderboard-container">
         <table>
